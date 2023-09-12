@@ -1,0 +1,68 @@
+[project]
+name = "obsproclib"
+description = "Tools for the inversion of seismic data for Centroid moment tensors."
+readme = "README.md"
+dynamic = ["version"]
+requires-python = ">=3.10"
+license = {file = "LICENSE", name = "GPLv3+"}
+authors = [
+    {name = "Lucas Sawade", email = "lsawade@princeton.edu" }
+]
+maintainers = [
+  {name = "Lucas Sawade", email = "lsawade@princeton.edu"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent"
+]
+keywords = [
+    "Obspy",
+    "Seismology",
+    "CMT",
+    "Inversion",
+    "Optimization"
+]
+dependencies = [
+    "obspy",
+    "matplotlib",
+    "numpy",
+    "scipy",
+    "obsproclib",
+]
+
+[project.optional-dependencies]
+docs = [
+    "sphinx<6.0",
+    "furo",
+    "sphinx-design",
+    "sphinx_togglebutton",
+    "sphinx_gallery",
+    "numpydoc",
+]
+
+[project.urls]  # Optional
+"Homepage" = "https://github.com/lsawade/cmt3d"
+"Bug Reports" = "https://github.com/lsawade/cmt3d/issues"
+"Source" = "https://github.com/lsawade/cmt3d"
+"Documentation" = "http://lsawade.github.io/cmt3d"
+
+[project.scripts]  # Optional
+opl = "obsplotlib.__main.__:main"
+
+[tool.setuptools]
+# If there are data files included in your packages that need to be
+# installed, specify them here.
+# package-data = {"obsplotlib" = ["example_data/**"]}
+
+[build-system]
+requires = [
+    "setuptools >= 65",
+    "setuptools_scm[toml]",
+    "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/cmt3d/_version.py"
+version_scheme = "release-branch-semver"
