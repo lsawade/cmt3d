@@ -1,0 +1,117 @@
+# Inputs. Put full path for safety (~ often isn't recognized by Python)
+database: /scratch/gpfs/lsawade/testdatabase
+
+# For creating and grabbing from the observed data
+datadatabase: /scratch/gpfs/lsawade/database
+
+# Eventstatus directory
+event_status: /home/lsawade/events
+
+# Specfem Directory
+specfem: /scratch/gpfs/lsawade/SpecfemMagic/specfem3d_globe
+
+# For the default also the default process parameters are used
+processparams: null
+
+# For launching specfem 
+launch_method: srun -n6 --gpus-per-task=1
+
+# Multiprocesses: Number of cores to use for the processing
+multiprocesses: 10
+
+# Define whether to download data or not
+download_data: True
+
+# Path pointing to a download parameter file
+downloadparams: null
+
+# Max duration and offsets
+duration: 7200
+starttime_offset: -120.0
+endtime_offset: 120.0
+merge_windows: True
+normalize: True
+weighting: True
+max_weight_ratio: 5.0
+component_weights:
+  R: 1.0
+  T: 1.0
+  Z: 1.0
+
+# Min depth constraint utilized in update model, hard set of upper/lower
+# bounds
+parameter_constraints:
+  lower:
+    depth_in_m = 5000.0
+  upper: null
+
+# Whether to constrain the moment tensor to have a zero trace
+zero_trace: False
+
+# Whether to overwrite a previous direcotry completely
+overwrite: False
+
+# Labels for start and final solution "<event_id>_<label>", 
+# Solution label must be set
+start_label: null
+solution_label: "gcmt3d"
+
+# Optimization parameters
+parameters:
+  depth_in_m:
+    scale: 5000.0
+    pert: null
+  latitude:
+    scale: 1.0
+    pert: null
+  longitude:
+    scale: 1.0
+    pert: null
+  time_shift:
+    scale: 1.0
+    pert: null
+  m_rr: 
+    scale: null
+    pert: 1e23
+  m_tt: 
+    scale: null
+    pert: 1e23
+  m_pp: 
+    scale: null
+    pert: 1e23
+  m_rt: 
+    scale: null
+    pert: 1e23
+  m_rp: 
+    scale: null
+    pert: 1e23
+  m_tp: 
+    scale: null
+    pert: 1e23
+
+
+optimization:
+  # Regularization fraction of absmax of the Gauss-Newton Hessian
+  damping: 0.01
+
+  # Max iterations
+  niter_max: 2
+
+  # Max linesearches
+  nls_max: 4
+
+  # Factor by which to increase alpha
+  factor: 2
+
+  # Stopping criterion relative cost lower than
+  stopping_criterion: 1.0e-2
+
+  # Stopping criterion relative cost change lower than
+  stopping_criterion_cost_change: 1.0e-3
+
+  # Stopping criterion relative modelnorm change lower than
+  stopping_criterion_model: 1.0e-4
+
+  
+  
+  # Other parameters.

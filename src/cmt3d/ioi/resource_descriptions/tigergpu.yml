@@ -1,0 +1,7 @@
+scheduler: slurm
+cores-per-node: 28
+cpus-per-node: 28
+gpus-per-node: 4
+flags: 
+  --gres=gpu:4
+  --ntasks-per-core=1

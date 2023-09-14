@@ -15,19 +15,9 @@ Last Update: April 2020
 import os
 import sys
 import pprint
-from lwsspy.gcmt3d.process_classifier import filter_scaling
-from lwsspy.gcmt3d.process_classifier import ProcessParams
+import cmt3d
 from numpy import testing as npt
-
-
-def _upper_level(path, nlevel=4):
-    """
-    Go the nlevel dir up
-    """
-    for i in range(nlevel):
-        path = os.path.dirname(path)
-    return path
-
+xw
 
 # Recreates bash touch behaviour
 def touch(path):
@@ -48,7 +38,7 @@ def test_filter_scaling():
     endmag = 8.0
 
     # Compute new corners
-    newcorners = filter_scaling(startcorners, startmag, endcorners, endmag, m)
+    newcorners = cmt3d.filter_scaling(startcorners, startmag, endcorners, endmag, m)
 
     # Check if correct
     npt.assert_array_almost_equal(newcorners, [162.5, 186.11111111111,
@@ -65,8 +55,7 @@ def test_classifier_class():
     depth = 200000  # in meters
 
     # Create ProcessParam class
-    p = ProcessParams(mw, depth)
-    pdict = p.determine_all()
+    pdict = cmt3d.get_process_parameters(mw, depth)
 
     # Print if errored
     print(6.5)
@@ -91,8 +80,7 @@ def test_classifier_class():
     depth = 200000.0  # in meters
 
     # Create ProcessParam class
-    p = ProcessParams(mw, depth)
-    pdict = p.determine_all()
+    pdict = cmt3d.get_process_parameters(mw, depth)
 
     # Print if errored
     print(7.5)
@@ -110,8 +98,7 @@ def test_classifier_class():
     depth = 200000.0  # in meters
 
     # Create ProcessParam class
-    p = ProcessParams(mw, depth)
-    pdict = p.determine_all()
+    pdict = cmt3d.get_process_parameters(mw, depth)
 
     # Print if errored
     print(8.0)
@@ -129,8 +116,7 @@ def test_classifier_class():
     depth = 200000  # in meters
 
     # Create ProcessParam class
-    p = ProcessParams(mw, depth)
-    pdict = p.determine_all()
+    pdict = cmt3d.get_process_parameters(mw, depth)
 
     # Print if errored
     print(5.25)

@@ -1,0 +1,203 @@
+body:
+  weight: 1.0
+  process:
+    water_level: 100.0
+    filter_flag: True
+    pre_filt: [0.0030, 0.0040, 0.0111, 0.0139]
+    relative_starttime: 100
+    relative_endtime: 3300
+    resample_flag: True
+    sampling_rate: 0.5
+    taper_type: cosine
+    taper_percentage: 0.05
+    rotate_flag: True
+    sanity_check: True
+  window:
+    - config:
+        min_period: 40.0
+        max_period: 100.0
+        stalta_waterlevel: 0.085
+        tshift_acceptance_level: 18.0
+        tshift_reference: 0.0
+        dlna_acceptance_level: 0.8
+        dlna_reference: 0.0
+        cc_acceptance_level: 0.85
+        s2n_limit: 3.0
+        s2n_limit_energy: 3.0
+        window_signal_to_noise_type: amplitude
+        selection_mode: body_waves
+        min_surface_wave_velocity: 3.20
+        max_surface_wave_velocity: 4.10
+        earth_model: ak135
+        max_time_before_first_arrival: 100.0
+        max_time_after_last_arrival: 200.0
+        check_global_data_quality: True
+        snr_integrate_base: 3.5
+        snr_max_base: 3.0
+        c_0: 0.7
+        c_1: 3.0
+        c_2: 0.0
+        c_3a: 1.0
+        c_3b: 2.0
+        c_4a: 3.0
+        c_4b: 10.0
+        resolution_strategy: interval_scheduling
+        # instrument_merge_flag: True
+      components:
+        Z:
+        R:
+          s2n_limit: 3.5
+          s2n_limit_energy: 3.5
+          snr_max_base: 3.5
+        T:
+          max_surface_wave_velocity: 5.00
+          s2n_limit: 3.5
+          s2n_limit_energy: 3.5
+          snr_max_base: 3.5
+  
+    - config:
+        min_period: 40.0
+        max_period: 100.0
+        stalta_waterlevel: 0.085
+        tshift_acceptance_level: 18.0
+        tshift_reference: 0.0
+        dlna_acceptance_level: 0.8
+        dlna_reference: 0.0
+        cc_acceptance_level: 0.85
+        s2n_limit: 3.0
+        s2n_limit_energy: 3.0
+        window_signal_to_noise_type: amplitude
+        selection_mode: phase_list:PcP,ScS,PcS,ScP
+        min_surface_wave_velocity: 3.20
+        max_surface_wave_velocity: 4.10
+        earth_model: ak135
+        max_time_before_first_arrival: 100.0
+        max_time_after_last_arrival: 200.0
+        check_global_data_quality: True
+        snr_integrate_base: 3.5
+        snr_max_base: 3.0
+        c_0: 0.7
+        c_1: 3.0
+        c_2: 0.0
+        c_3a: 1.0
+        c_3b: 2.0
+        c_4a: 3.0
+        c_4b: 10.0
+        resolution_strategy: interval_scheduling
+        # instrument_merge_flag: True
+      components:
+        Z:
+        R:
+          s2n_limit: 3.5
+          s2n_limit_energy: 3.5
+          snr_max_base: 3.5
+        T:
+          max_surface_wave_velocity: 5.00
+          s2n_limit: 3.5
+          s2n_limit_energy: 3.5
+          snr_max_base: 3.5
+
+surface:
+  weight: 1.0
+  process:
+    water_level: 100.0
+    filter_flag: True
+    pre_filt: [0.0030, 0.0040, 0.0111, 0.0139]
+    relative_starttime: 100
+    relative_endtime: 3300
+    resample_flag: True
+    sampling_rate: 0.5
+    taper_type: cosine
+    taper_percentage: 0.05
+    rotate_flag: True
+    sanity_check: True
+  window:
+    - config:
+        min_period: 90.0
+        max_period: 250.0
+        stalta_waterlevel: 0.085
+        tshift_acceptance_level: 18.0
+        tshift_reference: 0.0
+        dlna_acceptance_level: 0.8
+        dlna_reference: 0.0
+        cc_acceptance_level: 0.80
+        s2n_limit: 3.5
+        s2n_limit_energy: 3.5
+        window_signal_to_noise_type: amplitude
+        selection_mode: surface_waves
+        min_surface_wave_velocity: 3.00
+        max_surface_wave_velocity: 4.10
+        earth_model: ak135
+        max_time_before_first_arrival: 100.0
+        max_time_after_last_arrival: 200.0
+        check_global_data_quality: True
+        snr_integrate_base: 3.5
+        snr_max_base: 6.0
+        c_0: 0.7
+        c_1: 4.0
+        c_2: 0.1
+        c_3a: 1.0
+        c_3b: 2.0
+        c_4a: 3.0
+        c_4b: 10.0
+        resolution_strategy: interval_scheduling
+        # instrument_merge_flag: True
+      components:
+        Z:
+
+        R:
+
+        T:
+          max_surface_wave_velocity: 4.80
+
+mantle:
+  weight: 1.0
+  process:
+    water_level: 100.0
+    filter_flag: True
+    pre_filt: [0.0030, 0.0040, 0.0111, 0.0139]
+    relative_starttime: 100
+    relative_endtime: 3300
+    resample_flag: True
+    sampling_rate: 0.5
+    taper_type: cosine
+    taper_percentage: 0.05
+    rotate_flag: True
+    sanity_check: True
+  window:
+    - config:
+        min_period: 90.0
+        max_period: 250.0
+        stalta_waterlevel: 0.085
+        tshift_acceptance_level: 25.0
+        tshift_reference: 0.0
+        dlna_acceptance_level: 0.8
+        dlna_reference: 0.0
+        cc_acceptance_level: 0.8
+        s2n_limit: 5.0
+        s2n_limit_energy: 5.0
+        window_signal_to_noise_type: amplitude
+        selection_mode: surface_waves
+        min_surface_wave_velocity: 2.50
+        max_surface_wave_velocity: 5.00
+        earth_model: ak135
+        max_time_before_first_arrival: 200.0
+        max_time_after_last_arrival: 400.0
+        check_global_data_quality: True
+        snr_integrate_base: 3.5
+        snr_max_base: 6.0
+        c_0: 0.7
+        c_1: 4.0
+        c_2: 0.2
+        c_3a: 1.0
+        c_3b: 2.0
+        c_4a: 3.0
+        c_4b: 10.0
+        resolution_strategy: interval_scheduling
+        # instrument_merge_flag: True
+      components:
+        Z:
+        R:
+        T:
+          min_surface_wave_velocity: 3.0
+          max_surface_wave_velocity: 6.5

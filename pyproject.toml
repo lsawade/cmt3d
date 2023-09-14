@@ -1,5 +1,5 @@
 [project]
-name = "obsproclib"
+name = "cmt3d"
 description = "Tools for the inversion of seismic data for Centroid moment tensors."
 readme = "README.md"
 dynamic = ["version"]
@@ -30,6 +30,7 @@ dependencies = [
     "numpy",
     "scipy",
     "obsproclib",
+    "obswinlib",
 ]
 
 [project.optional-dependencies]
@@ -41,6 +42,12 @@ docs = [
     "sphinx_gallery",
     "numpydoc",
 ]
+nnodes = [
+    "nnodes"
+]
+entk = [
+    "entk"
+]
 
 [project.urls]  # Optional
 "Homepage" = "https://github.com/lsawade/cmt3d"
@@ -49,7 +56,7 @@ docs = [
 "Documentation" = "http://lsawade.github.io/cmt3d"
 
 [project.scripts]  # Optional
-opl = "obsplotlib.__main.__:main"
+# opl = "obsplotlib.__main.__:main"
 
 [tool.setuptools]
 # If there are data files included in your packages that need to be
