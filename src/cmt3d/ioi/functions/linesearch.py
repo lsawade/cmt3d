@@ -1,7 +1,6 @@
 import os
 import numpy as np
-from lwsspy.utils.io import read_yaml_file
-
+import cmt3d
 from .log import write_log, write_status
 from .wolfe import wolfe_conditions, update_alpha
 from .cost import read_cost
@@ -81,7 +80,7 @@ def check_optvals(outdir, status=True):
     ls = get_step(outdir)
 
     # Read inputparams
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
     nls_max = inputparams['optimization']['nls_max']
 
     # Read previous set of optimization values
@@ -152,7 +151,7 @@ def linesearch(outdir):
     q = np.sum(dm*g)
 
     # Read inputparams
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
     factor = inputparams['optimization']['factor']
 
     # Write first set of linesearch parameters
@@ -176,10 +175,10 @@ def linesearch(outdir):
         # Read current cost
         cost = read_cost(outdir, it, ls)
 
-        # Read old cost 
+        # Read old cost
         # IMPORTANT HERE is that the iterations cost is checked!
-        # The previous linesearch may or may not be a lot higher than the 
-        # iteration's costs, and we would accept a cost that did not actually 
+        # The previous linesearch may or may not be a lot higher than the
+        # iteration's costs, and we would accept a cost that did not actually
         # decrease
         cost_old = read_cost(outdir, it, 0)
 

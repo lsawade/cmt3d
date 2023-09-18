@@ -190,7 +190,7 @@ def mantlewave_params(mw: float):
         filter = newcorners[::-1]
 
     # Record length
-    time = 3 * 3600.0
+    time = 4 * 3600.0 - 400.0
 
     return weight, filter, time
 

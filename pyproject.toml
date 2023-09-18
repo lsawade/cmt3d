@@ -25,6 +25,7 @@ keywords = [
     "Optimization"
 ]
 dependencies = [
+    "click",
     "obspy",
     "matplotlib",
     "numpy",

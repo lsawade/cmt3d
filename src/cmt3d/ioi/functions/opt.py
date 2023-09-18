@@ -1,7 +1,6 @@
 import os
-import wave
 import numpy as np
-from lwsspy.utils.io import read_yaml_file
+import cmt3d
 
 from .model import read_model, read_model_names, write_model, read_scaling
 from .cost import read_cost, write_cost
@@ -19,14 +18,14 @@ def constrain_model(outdir, m):
     ``parameter_constraints`` is set in the input file"""
 
     # Get input parameters
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
 
     # If no parameters should be constraint, return
     if hasattr(inputparams, 'parameter_constraints') is False:
         return m
     elif inputparams['parameter_constraints'] is None:
         return m
-        
+
     # Get lower and upper constraints
     lower = inputparams['parameter_constraints']['lower']
     upper = inputparams['parameter_constraints']['upper']
@@ -84,7 +83,7 @@ def update_mcgh(outdir):
     ls = get_step(outdir)
 
     # Read input params
-    processparams = read_yaml_file(os.path.join(outdir, 'process.yml'))
+    processparams = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     # Get wave type
     wavetypes = list(processparams.keys())
@@ -134,9 +133,9 @@ def check_done(outdir):
     # Get iter,step
     it = get_iter(outdir)
     # ls = get_step(outdir)
-    
+
     # Read input parameters and optimization characteristics
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
 
     # Get stopping parameters from input file
     niter_max = inputparams['optimization']['niter_max']
@@ -151,6 +150,7 @@ def check_done(outdir):
 
     # Get the scaled models
     scaling = read_scaling(outdir)
+    model = read_model(outdir, it, 0)
     smodel_prev = read_model(outdir, it, 0)/scaling
     smodel = read_model(outdir, it+1, 0)/scaling
 
@@ -162,20 +162,27 @@ def check_done(outdir):
 
     STATUS = False
 
-    if (np.abs(cost - cost_old)/cost_init < stopping_criterion_cost_change):
+    init_cost_change = cost/cost_init
+    rel_cost_change = np.abs(cost - cost_old)/cost_init
+    rel_model_change = np.sum(smodel - smodel_prev)**2/np.sum((smodel_prev)**2)
+
+    write_log(outdir, f"      init_cost_change: {init_cost_change}")
+    write_log(outdir, f"      rel_cost_change: {rel_cost_change}")
+    write_log(outdir, f"      rel_model_change: {rel_model_change}")
+
+    if (rel_cost_change < stopping_criterion_cost_change):
         message = "FINISHED: Cost function not decreasing enough to justify iteration."
         write_status(outdir, message)
         STATUS = True
-    elif (cost/cost_init < stopping_criterion):
+    elif (init_cost_change < stopping_criterion):
         message = "FINISHED: Optimization algorithm has converged."
         write_status(outdir, message)
         STATUS = True
-    elif np.sum(smodel - smodel_prev)**2/np.sum((smodel_prev)**2) \
-            < stopping_criterion_model:
+    elif rel_model_change < stopping_criterion_model:
         message = "FINISHED: Model is not updating enough anymore."
         write_status(outdir, message)
         STATUS = True
-    elif niter_max == it:
+    elif niter_max-1 == it:
         message = "FINISHED: Maximum # of iterations reached."
         write_status(outdir, message)
         STATUS = True

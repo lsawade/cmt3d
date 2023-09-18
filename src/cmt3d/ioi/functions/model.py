@@ -1,8 +1,9 @@
-from curses import meta
+
 import os
+import copy
 import numpy as np
 import typing as tp
-from lwsspy.seismo.source import CMTSource
+import cmt3d
 from .constants import Constants
 from .log import get_iter, get_step
 
@@ -69,7 +70,7 @@ def get_cmt(
     model_names = read_model_names(outdir)
 
     # Read original CMT solution
-    cmtsource = CMTSource.from_CMTSOLUTION_file(
+    cmtsource = cmt3d.CMTSource.from_CMTSOLUTION_file(
         os.path.join(metadir, 'init_model.cmt')
     )
 
@@ -89,6 +90,45 @@ def get_cmt(
     # Otherwise return cmtsource
     else:
         return cmtsource
+
+def get_cmt_all(outdir: str):
+
+    # Read metadata and model
+    model_names = read_model_names(outdir)
+
+    # Read original CMT solution
+    cmtsource = cmt3d.CMTSource.from_CMTSOLUTION_file(
+        os.path.join(outdir, 'meta', 'init_model.cmt')
+    )
+
+    # Get all models
+    model_names = read_model_names(outdir)
+    models = read_model_all(outdir)
+
+    # Init list of sources
+    cmts =[]
+
+    # Loop over models
+    for _it, _model in enumerate(models):
+
+        if _it == 0:
+            cmts.append(cmtsource)
+        else:
+
+            # Copy cmt
+            outcmt = copy.deepcopy(cmtsource)
+
+            # Update the CMTSOLUTION with the current model state
+            for _m, _mname in zip(_model, model_names):
+                setattr(outcmt, _mname, _m)
+
+            # Update half-duration afterwards
+            outcmt.update_hdur()
+
+            # Append to cmts list
+            cmts.append(outcmt)
+
+    return cmts
 
 
 def get_simpars(outdir):
@@ -155,3 +195,19 @@ def read_model(outdir, it, ls=None):
     file = os.path.join(outdir, 'modl', fname)
     m = np.load(file)
     return m
+
+
+
+def read_model_all(outdir):
+
+    # Get directory
+    modldir = os.path.join(outdir, 'modl')
+
+    modls = []
+    for _mfile in sorted(os.listdir(modldir)):
+        if "ls00000" in _mfile:
+            modls.append(np.load(os.path.join(modldir, _mfile)))
+
+    return np.vstack(modls)
+
+

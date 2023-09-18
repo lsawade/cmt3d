@@ -1,85 +1,83 @@
 # %%
 import os
 from nnodes import Node
+from .cache import GFM_CACHE
+from gf3d.seismograms import GFManager
 from cmt3d.source import CMTSource
-from cmt3d.ioi.functions.utils import optimdir, wcreate_forward_dirs
-from cmt3d.ioi.functions.forward import update_cmt_synt
-from cmt3d.ioi.functions.kernel import update_cmt_dsdm
-from cmt3d.ioi.functions.processing import process_data, window, \
-    process_synt, wprocess_dsdm
-from cmt3d.ioi.functions.model import get_simpars, read_model_names
-from cmt3d.ioi.functions.weighting import compute_weights as \
-    compute_weights_func
-from cmt3d.ioi.functions.cost import cost
-from cmt3d.ioi.functions.descent import descent
-from cmt3d.ioi.functions.gradient import gradient
-from cmt3d.ioi.functions.hessian import hessian
-from cmt3d.ioi.functions.linesearch import linesearch as get_optvals, \
-    check_optvals
-from cmt3d.ioi.functions.opt import check_done, update_model, update_mcgh
-from cmt3d.ioi.functions.log import update_iter, update_step, reset_step, \
-    get_iter
-from cmt3d.ioi.functions.events import check_events_todo
-
+import cmt3d.ioi as ioi
 
 # ----------------------------- MAIN NODE -------------------------------------
 # Loops over events: TODO smarter event check
 def main(node: Node):
     node.concurrent = True
 
-    # Events to be inverted
-    print('Checking events TODO ...')
-    eventfiles = check_events_todo(node.inputfile)
+    # # Events to be inverted
+    # print('Checking events TODO ...')
+    # eventfiles = check_events_todo(node.inputfile)
 
-    # Specific event id(s)
-    eventflag = True if node.eventid is not None else False
-    print('Specfic event(s)?', eventflag)
+    # # Specific event id(s)
+    # eventflag = True if node.eventid is not None else False
+    # print('Specfic event(s)?', eventflag)
 
-    # Maximum download flag
-    maxflag = True if node.max_events != 0 else False
-    print('Maximum # of events?', maxflag)
+    # # Maximum inversion flag
+    # maxflag = True if node.max_events != 0 else False
+    # print('Maximum # of events?', maxflag)
 
-    # If eventid in files only use the ids
-    if eventflag:
-        print('Getting specific events...')
-        nevents = []
+    # # If eventid in files only use the ids
+    # if eventflag:
+    #     print('Getting specific events...')
+    #     nevents = []
 
-        eventnames = [
-            CMTSource.from_CMTSOLUTION_file(_file).eventname
-            for _file in eventfiles]
+    #     eventnames = [
+    #         CMTSource.from_CMTSOLUTION_file(_file).eventname
+    #         for _file in eventfiles]
 
-        # Check whether multiple eventids are requested
-        if isinstance(node.eventid, list):
-            eventids = node.eventid
-        else:
-            eventids = [node.eventid]
+    #     # Check whether multiple eventids are requested
+    #     if isinstance(node.eventid, list):
+    #         eventids = node.eventid
+    #     else:
+    #         eventids = [node.eventid]
 
-        # If id in eventnames, add the eventfile
-        for _id in eventids:
-            idx = eventnames.index(_id)
-            nevents.append(eventfiles[idx])
+    #     # If id in eventnames, add the eventfile
+    #     for _id in eventids:
+    #         idx = eventnames.index(_id)
+    #         nevents.append(eventfiles[idx])
 
-        eventfiles = nevents
+    #     eventfiles = nevents
 
-    # If max number of inversion select first X
-    if maxflag:
-        print('Getting max # of events ...')
-        eventfiles = eventfiles[:node.max_events]
+    # # If max number of inversion select first X
+    # if maxflag:
+    #     print('Getting max # of events ...')
+    #     eventfiles = eventfiles[:node.max_events]
 
-    # print list of events if not longer than 10
-    if len(eventfiles) < 11:
-        for _ev in eventfiles:
-            print(_ev)
+    # # print list of events if not longer than 10
+    # if len(eventfiles) < 11:
+    #     for _ev in eventfiles:
+    #         print(_ev)
 
     # Loop over inversions
-    for event in eventfiles:
-        eventname = CMTSource.from_CMTSOLUTION_file(event).eventname
-        out = optimdir(node.inputfile, event, get_dirs_only=True)
-        outdir = out[0]
-        node.add(cmtinversion, concurrent=False, name=eventname,
-                 outdir=outdir, inputfile=node.inputfile,
-                 event=event, eventname=eventname,
-                 log=os.path.join(outdir, 'logs'))
+    # for event in eventfiles:
+    #     eventname = CMTSource.from_CMTSOLUTION_file(event).eventname
+    #     out = optimdir(node.inputfile, event, get_dirs_only=True)
+    #     outdir = out[0]
+
+    scriptdir = '/Users/lucassawade/PDrive/Python/Codes/cmt3d/scripts'
+    datadir = os.path.join(scriptdir, 'data')
+    cmtfilename = os.path.join(datadir, 'C201801230931A')
+    subsetfilename = os.path.join(datadir, 'subset.h5')
+
+    eventname = os.path.basename(cmtfilename)
+    out = ioi.optimdir(node.inputfile, cmtfilename, get_dirs_only=True)
+    outdir = out[0]
+    if os.path.exists(outdir):
+        node.rm(outdir)
+
+    node.add(cmtinversion, concurrent=False, name=eventname,
+             eventname=eventname,
+             outdir=outdir,
+             eventfile=cmtfilename,
+             subsetfilename=subsetfilename,
+             log=os.path.join(outdir, 'logs'))
 # -----------------------------------------------------------------------------
 
 
@@ -88,15 +86,17 @@ def main(node: Node):
 # Performs inversion for a single event
 def cmtinversion(node: Node):
     # node.write(20 * "=", mode='a')
-    node.add(iteration, concurrent=False)
+    node.add(iteration)
 
 
 # Performs iteration
 def iteration(node: Node):
 
+    node.concurrent = False
+
     try:
         # Will fail if ITER.txt does not exist
-        firstiterflag = get_iter(node.outdir) == 0
+        firstiterflag = ioi.get_iter(node.outdir) == 0
 
     except Exception:
         firstiterflag = True
@@ -104,40 +104,47 @@ def iteration(node: Node):
     if firstiterflag:
 
         # Create the inversion directory/makesure all things are in place
-        node.add_mpi(
-            wcreate_forward_dirs, arg=(node.event, node.inputfile),
-            nprocs=1, cpus_per_proc=4,
-            name=f"mpi-create-dir-{node.eventname}",
-            cwd=node.log)
+        node.add(ioi.create_forward_dirs, args=(node.eventfile, node.inputfile),
+                 name=f"create-dir", cwd=node.log)
+
+        # Get data
+        # node.add(ioi.get_data, args=(node.outdir,))
+
+        # Load GF
+        # Load Green function
+        print('loading gfm')
+
+        GFM_CACHE[node.eventname] = GFManager(node.subsetfilename)
+        GFM_CACHE[node.eventname].load()
+        print('loaded  gfm')
 
         # Forward and frechet modeling
-        node.add(forward_frechet, concurrent=True)
+        node.add(forward_frechet)
 
         # Process the data and the synthetics
-        node.add(process_all, concurrent=True,
-                 name='processing-all', cwd=node.log)
+        node.add(process_all, name='process-all', cwd=node.log)
 
         # Windowing
-        node.add_mpi(
-            window, arg=(node.outdir),
-            nprocs=1, cpus_per_proc=10,
-            cwd=node.log)
+        node.add_mpi(ioi.window, args=(node.outdir,),
+                     nprocs=1, cpus_per_proc=4,
+                     cwd=node.log)
 
         # Weighting
-        node.add(compute_weights)
+        node.add(ioi.compute_weights, args=(node.outdir,))
 
         # Cost, Grad, Hess
-        node.add(compute_cgh, concurrent=True)
+        node.add(compute_cgh)
 
     # Get descent direction
     node.add(compute_descent)
 
-    # First set of optimization values only computes the initial q and
-    # sets alpha to 1
-    node.add(compute_optvals)
+    # Computes optimization parameters (Wolfe etc.)
+    node.add(ioi.linesearch, args=(node.outdir, ))
 
+    # Runs actual linesearch
     node.add(linesearch)
 
+    # Checks whether to add another iteration
     node.add(iteration_check)
 
 
@@ -147,85 +154,61 @@ def linesearch(node):
 
 
 def search_step(node):
-    update_step(node.outdir)
-    node.add(compute_new_model)
-    node.add(forward_frechet, concurrent=True, outdir=node.outdir)
-    node.add(process_synthetics, concurrent=True,
-             name='processing-synthetics', cwd='./logs')
-    node.add(compute_cgh, concurrent=True)
+    node.add(ioi.update_step, args=(node.outdir,))
+    node.add(ioi.update_model, args=(node.outdir,))
+    node.add(forward_frechet)
+    node.add(process_synthetics)
+    node.add(compute_cgh)
     node.add(compute_descent)
-    node.add(compute_optvals)
+    node.add(ioi.linesearch, args=(node.outdir,))
     node.add(search_check)
 
 
 # -------------------
 # Forward Computation
-def forward_frechet(node):
-    node.add(forward, concurrent=True)
-    node.add(frechet, concurrent=True)
+def forward_frechet(node: Node):
+    node.concurrent = True
+    node.add(forward)
+    node.add(frechet)
 
+def forward(node: Node):
+    ioi.forward(node.outdir, GFM_CACHE[node.eventname])
 
-# Forward synthetics
-def forward(node):
-    # setup
-    update_cmt_synt(node.outdir)
-    node.add_mpi(
-        'bin/xspecfem3D',
-        nprocs=node.specfem['mpis'],
-        cpus_per_proc=1,
-        gpus_per_proc=node.specfem['gpus'],
-        mps=node.specfem['mps'],
-        timeout=node.specfem['timeout'],
-        cwd=os.path.join(node.outdir, 'simu', 'synt'))
-
-
-# Frechet derivatives
-def frechet(node):
-    # Setup
-    update_cmt_dsdm(node.outdir)
-
-    # Process the frechet derivatives
-    simpars = get_simpars(node.outdir)
-    for _i in simpars:
-        node.add_mpi(
-            'bin/xspecfem3D',
-            nprocs=node.specfem['mpis'],
-            cpus_per_proc=1,
-            gpus_per_proc=node.specfem['gpus'],
-            mps=node.specfem['mps'],
-            timeout=node.specfem['timeout'],
-            cwd=os.path.join(node.outdir, 'simu', 'dsdm', f'dsdm{_i:05d}'))
-
+def frechet(node: Node):
+    ioi.kernel(node.outdir, GFM_CACHE[node.eventname])
 
 # ----------
 # Processing
-def process_all(node):
+def process_all(node: Node):
+    node.concurrent = True
 
     node.add_mpi(
-        process_data, arg=(node.outdir),
-        nprocs=1, cpus_per_proc=10,
-        name=node.eventname + '_process_data', cwd=node.log)
-    node.add(process_synthetics, concurrent=True)
+        ioi.process_data, args=(node.outdir,),
+        nprocs=1, cpus_per_proc=4,
+        name='process_data', cwd=node.log)
+    node.add(process_synthetics)
 
 
 # Process forward & frechet
-def process_synthetics(node):
+def process_synthetics(node: Node):
+    node.concurrent = True
 
     # Process the normal synthetics
     node.add_mpi(
-        process_synt, arg=(node.outdir),
-        nprocs=1, cpus_per_proc=10,
-        name=node.eventname + '_process_synt',
+        ioi.process_synt, args=(node.outdir, ),
+        nprocs=1, cpus_per_proc=4,
+        name='process_synt',
         cwd=node.log)
 
     # Process the frechet derivatives
-    NM = len(read_model_names(node.outdir))
+    NM = len(ioi.read_model_names(node.outdir))
+
     for _i in range(NM):
-        print(node.outdir, 'simpar', _i)
+
         node.add_mpi(
-            wprocess_dsdm, arg=(node.outdir, _i),
-            nprocs=1, cpus_per_proc=10,
-            name=node.eventname + f'_process_dsdm{_i:05d}',
+            ioi.process_dsdm, args=(node.outdir, _i),
+            nprocs=1, cpus_per_proc=4,
+            name=f'process_dsdm{_i:05d}',
             cwd=node.log)
 
 # ------------------
@@ -234,99 +217,80 @@ def process_synthetics(node):
 # update linesearch
 
 
-def compute_new_model(node):
-    update_model(node.outdir)
+def compute_new_model(node: Node):
+    ioi.update_model(node.outdir)
 
 
 # Transer to next iteration
-def transfer_mcgh(node):
-    node.add_mpi(
-        update_mcgh, arg=(node.outdir),
-        nprocs=1, cpus_per_proc=4,
-        name=f"mpi-transfer-mcgh-{node.eventname}",
-        cwd=node.log)
+def transfer_mcgh(node: Node):
+    node.add(ioi.update_mcgh, args=(node.outdir,),
+             name=f"transfer-mcgh", cwd=node.log)
 
 
 # -------------
 # Pre-inversion
-def compute_weights(node):
+def compute_weights(node: Node):
     node.add_mpi(
-        compute_weights_func,  arg=(node.outdir),
+        ioi.compute_weights,  args=(node.outdir,),
         nprocs=1, cpus_per_proc=4,
-        name=f"mpi-compute-weights-{node.eventname}",
+        name=f"compute-weights",
         cwd=node.log)
 
 
 # --------------------------------
 # Cost, Gradient, Hessian, Descent
-def compute_cgh(node):
+def compute_cgh(node: Node):
+    node.concurrent = True
     node.add(compute_cost)
     node.add(compute_gradient)
     node.add(compute_hessian)
 
-
 # Cost
-def compute_cost(node):
-    node.add_mpi(
-        cost, arg=(node.outdir),
-        nprocs=1, cpus_per_proc=4,
-        name=f"mpi-compute-cost-{node.eventname}",
-        cwd=node.log)
+def compute_cost(node: Node):
+    node.add(ioi.cost, args=(node.outdir,), name=f"cost", cwd=node.log)
 
 
 # Gradient
-def compute_gradient(node):
-    node.add_mpi(
-        gradient, arg=(node.outdir), nprocs=1, cpus_per_proc=4,
-        name=f"mpi-compute-grad-{node.eventname}",
-        cwd=node.log)
+def compute_gradient(node: Node):
+    node.add(ioi.gradient, args=(node.outdir,), name=f"grad", cwd=node.log)
 
 
 # Hessian
-def compute_hessian(node):
-    node.add_mpi(
-        hessian, arg=(node.outdir),  nprocs=1, cpus_per_proc=4,
-        name=f"mpi-compute-hess-{node.eventname}",
-        cwd=node.log)
+def compute_hessian(node: Node):
+    node.add(ioi.hessian, args=(node.outdir,), name=f"hess", cwd=node.log)
 
 
 # Descent
-def compute_descent(node):
-    node.add_mpi(
-        descent, arg=(node.outdir), nprocs=1, cpus_per_proc=4,
-        name=f"mpi-compute-descent-{node.eventname}",
-        cwd=node.log)
+def compute_descent(node: Node):
+    node.add(ioi.descent, args=(node.outdir,), name=f"descent", cwd=node.log)
 
 # ----------
 # Linesearch
 
+def compute_optvals(node: Node):
+    node.add(ioi.check_optvals, args=(node.outdir,))
 
-def compute_optvals(node):
-    get_optvals(node.outdir)
 
 # Check whether to add another iteration
+def iteration_check(node: Node):
 
-
-def iteration_check(node):
-
-    flag = check_optvals(node.outdir, status=False)
+    flag = ioi.check_optvals(node.outdir, status=False)
 
     if flag == "FAIL":
         pass
 
     elif flag == "SUCCESS":
-        if check_done(node.outdir) is False:
-            update_iter(node.outdir)
-            reset_step(node.outdir)
+        if ioi.check_done(node.outdir) is False:
+            node.add(ioi.update_iter, args=(node.outdir,))
+            node.add(ioi.reset_step, args=(node.outdir,))
             node.parent.parent.add(iteration)
         else:
-            update_iter(node.outdir)
-            reset_step(node.outdir)
+            node.add(ioi.update_iter, args=(node.outdir,))
+            node.add(ioi.reset_step, args=(node.outdir,))
 
-
-def search_check(node):
+def search_check(node: Node):
     # Check linesearch result.
-    flag = check_optvals(node.outdir)
+    flag = ioi.check_optvals(node.outdir)
 
     if flag == "FAIL":
         pass

@@ -2,7 +2,7 @@
 import os
 import numpy as np
 from obspy import Stream
-from .utils import write_pickle, read_pickle
+import cmt3d
 
 
 def write_data(data: Stream, outdir, wavetype):
@@ -17,7 +17,7 @@ def write_data(data: Stream, outdir, wavetype):
     file = os.path.join(datadir, fname)
 
     # Write output
-    write_pickle(file, data)
+    cmt3d.write_pickle(file, data)
 
 
 def read_data(outdir, wavetype):
@@ -31,7 +31,7 @@ def read_data(outdir, wavetype):
     # Full file name
     file = os.path.join(datadir, fname)
 
-    return read_pickle(file)
+    return cmt3d.read_pickle(file)
 
 
 def write_data_windowed(data: Stream, outdir, wavetype):
@@ -46,7 +46,7 @@ def write_data_windowed(data: Stream, outdir, wavetype):
     file = os.path.join(datadir, fname)
 
     # Write output
-    write_pickle(file, data)
+    cmt3d.write_pickle(file, data)
 
 
 def read_data_windowed(outdir, wavetype):
@@ -60,4 +60,4 @@ def read_data_windowed(outdir, wavetype):
     # Full file name
     file = os.path.join(datadir, fname)
 
-    return read_pickle(file)
+    return cmt3d.read_pickle(file)

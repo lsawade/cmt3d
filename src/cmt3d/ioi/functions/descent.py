@@ -112,7 +112,7 @@ def descent(outdir):
     # Add damping if wanted!
     if damping > 0.0:
         m0 = read_model(outdir, 0, 0)
-        g, H = damp_gH(m/s, m0/s, g, H, damping) 
+        g, H = damp_gH(m/s, m0/s, g, H, damping)
 
     # Add zerotrace constraint if wanted
     if zero_trace:

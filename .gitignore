@@ -2,3 +2,5 @@ __pycache__
 .DS_Store
 *.egg-info
 docs/build
+*.h5
+*.pickle

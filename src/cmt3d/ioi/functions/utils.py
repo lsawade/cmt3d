@@ -1,13 +1,16 @@
+import psutil
 import os
 import shutil
 import numpy as np
 import obspy
 from pprint import pprint
 import cmt3d
+from gf3d.source import CMTSOLUTION
 from .constants import Constants
 from .model import read_model_names, read_scaling, write_model, \
     write_model_names, write_scaling, write_perturbation
 from .log import reset_iter, reset_step, write_status
+
 
 
 def createdir(cdir):
@@ -142,6 +145,7 @@ def optimdir(inputfile, cmtfilename, get_dirs_only=False):
     # Define the directories
     modldir = os.path.join(outdir, "modl")
     metadir = os.path.join(outdir, "meta")
+    measdir = os.path.join(outdir, "meas")
     datadir = os.path.join(outdir, "data")
     simudir = os.path.join(outdir, "simu")
     ssyndir = os.path.join(simudir, "synt")
@@ -158,8 +162,10 @@ def optimdir(inputfile, cmtfilename, get_dirs_only=False):
     if get_dirs_only is False:
 
         # Create directories
+        createdir(outdir)
         createdir(modldir)
         createdir(metadir)
+        createdir(measdir)
         createdir(datadir)
         createdir(ssyndir)
         createdir(sfredir)
@@ -320,6 +326,26 @@ def prepare_inversion_dir(cmtfile, outdir, inputparamfile):
         os.path.join(outdir, 'meta', 'init_model.cmt'))
 
 
+def prepare_simulation_dirs(outdir):
+
+    # Get relevant dirs
+    simudir = os.path.join(outdir, 'simu')
+    sfredir = os.path.join(simudir, 'dsdm')
+
+    # Get modelparameter names
+    model_names = read_model_names(outdir)
+
+    # Create one simulation directory for each inversion parameter
+    for _i, _mname in enumerate(model_names):
+
+        if _mname in Constants.nosimpars:
+            continue
+        else:
+            # Create
+            pardir = os.path.join(sfredir, f"dsdm{_i:05d}")
+            createdir(pardir)
+
+
 def prepare_model(outdir):
 
     # Get the initial model
@@ -368,7 +394,9 @@ def prepare_model(outdir):
     read_scaling(outdir)
 
     # Get perturbation
-    perturb_vector = np.array([val['pert'] for _, val in parameters.items()])
+    perturb_vector = np.array([np.nan if val['pert'] is None
+                               else float(val['pert'])
+                               for _, val in parameters.items()])
 
     # Write scaling vector
     write_perturbation(perturb_vector, outdir)
@@ -398,7 +426,7 @@ def prepare_stations(outdir):
 
     # Read inventory from the station directory and put into
     # a single stations.xml
-    inv = obspy.read_inventory(os.path.join(stationsdir, '*.xml'))
+    inv = cmt3d.read_inventory(os.path.join(stationsdir, '*.xml'))
 
     # Write inventory to a single station directory
     inv.write(os.path.join(outdir, 'meta', 'stations.xml'),
@@ -567,3 +595,68 @@ def parameters2rundir(modelnames, simudir: str):
             rundict[_i] = dict(parameter=_mname, rundir=frechetpath)
 
     return rundict
+
+
+def reset_cpu_affinity(verbose: bool = False):
+
+    from sys import platform
+    if platform == "darwin":
+        return
+
+    # Get main process
+    p = psutil.Process()
+
+    # Get current affinity
+    if verbose:
+        print("Current Affinity", p.cpu_affinity())
+
+    # Get all CPUs
+    all_cpus = list(range(0, psutil.cpu_count(logical=True), 1))
+
+    # Set new affinity
+    p.cpu_affinity(all_cpus)
+
+    # Print new affinity
+    if verbose:
+        print("New Affinity", p.cpu_affinity())
+
+
+def isipython():
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return True  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+
+
+def cmt3d2gf3d(cmt3d_source: cmt3d.CMTSource) -> CMTSOLUTION:
+
+    # Convert CMT3D source to GF3D source
+    cmt = CMTSOLUTION(
+        origin_time=cmt3d_source.origin_time,
+        pde_lat=cmt3d_source.pde_latitude,
+        pde_lon=cmt3d_source.pde_longitude,
+        pde_depth=cmt3d_source.pde_depth_in_m/1000.0,
+        mb=cmt3d_source.mb,
+        ms=cmt3d_source.ms,
+        region_tag=cmt3d_source.region_tag,
+        eventname=cmt3d_source.eventname,
+        time_shift=cmt3d_source.time_shift,
+        hdur=cmt3d_source.half_duration,
+        latitude=cmt3d_source.latitude,
+        longitude=cmt3d_source.longitude,
+        depth=cmt3d_source.depth_in_m/1000.0,
+        Mrr=cmt3d_source.m_rr,
+        Mtt=cmt3d_source.m_tt,
+        Mpp=cmt3d_source.m_pp,
+        Mrt=cmt3d_source.m_rt,
+        Mrp=cmt3d_source.m_rp,
+        Mtp=cmt3d_source.m_tp,
+    )
+
+    return cmt

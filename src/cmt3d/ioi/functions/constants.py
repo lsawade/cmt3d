@@ -1,14 +1,15 @@
 import os
-from lwsspy.utils.io import read_yaml_file
+import cmt3d
 
 scriptdir = os.path.dirname(os.path.abspath(__file__))
 paramsdir = os.path.dirname(scriptdir)
+
 
 class Constants:
 
     # Locations
     # ---------
-    processdict = read_yaml_file(os.path.join(paramsdir, "process.yml"))
+    processdict = cmt3d.read_yaml(os.path.join(paramsdir, "process.yml"))
     inputfilename = os.path.join(os.path.join(paramsdir, "input.yml"))
 
     # Download dictionary
@@ -37,7 +38,8 @@ class Constants:
     # Parameter lists:
     # ----------------
     # This parameters we know the frechet derivative computation of
-    parameter_check_list = ['depth_in_m', "time_shift", 'latitude', 'longitude',
+    parameter_check_list = [
+        'depth_in_m', "time_shift", 'latitude', 'longitude',
                             "m_rr", "m_tt", "m_pp", "m_rt", "m_rp", "m_tp"]
 
     # Parameters that do not need simulation
@@ -54,3 +56,33 @@ class Constants:
 
     # Source derivative for SPECFEM (hard-coded)
     source_derivative = dict(latitude=2, longitude=3, depth_in_m=1)
+
+    # Conversion table for cmt3d to gf3d
+    gf3d2cmt3d_par = dict(
+        Mrr='m_rr',
+        Mtt='m_tt',
+        Mpp='m_pp',
+        Mrt='m_rt',
+        Mrp='m_rp',
+        Mtp='m_tp',
+        latitude='latitude',
+        longitude='longitude',
+        depth='depth_in_m',
+        time_shift='time_shift',
+        hdur='half_duration',
+    )
+
+    # Conversion table for cmt3d to gf3d
+    cmt3d2gf3d_par = dict(
+        m_rr='Mrr',
+        m_tt='Mtt',
+        m_pp='Mpp',
+        m_rt='Mrt',
+        m_rp='Mrp',
+        m_tp='Mtp',
+        latitude='latitude',
+        longitude='longitude',
+        depth_in_m='depth',
+        time_shift='time_shift',
+        half_duration='hdur',
+    )

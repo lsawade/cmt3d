@@ -1,23 +1,17 @@
 # Inputs. Put full path for safety (~ often isn't recognized by Python)
-database: /scratch/gpfs/lsawade/testdatabase
+database: /Users/lucassawade/database/nnodes
 
 # For creating and grabbing from the observed data
-datadatabase: /scratch/gpfs/lsawade/database
+datadatabase: /Users/lucassawade/database/data
 
 # Eventstatus directory
-event_status: /home/lsawade/events
-
-# Specfem Directory
-specfem: /scratch/gpfs/lsawade/SpecfemMagic/specfem3d_globe
+event_status: /home/lsawade/database/events
 
 # For the default also the default process parameters are used
 processparams: null
 
-# For launching specfem
-launch_method: srun -n6 --gpus-per-task=1
-
 # Multiprocesses: Number of cores to use for the processing
-multiprocesses: 10
+multiprocesses: 1
 
 # Define whether to download data or not
 download_data: True
@@ -26,7 +20,7 @@ download_data: True
 downloadparams: null
 
 # Max duration and offsets
-duration: 7200
+duration: 14400
 starttime_offset: -120.0
 endtime_offset: 120.0
 merge_windows: True
@@ -46,15 +40,15 @@ parameter_constraints:
   upper: null
 
 # Whether to constrain the moment tensor to have a zero trace
-zero_trace: False
+zero_trace: True
 
-# Whether to overwrite a previous direcotry completely
+# Whether to overwrite a previous directory completely
 overwrite: False
 
 # Labels for start and final solution "<event_id>_<label>",
 # Solution label must be set
 start_label: null
-solution_label: "gcmt3d"
+solution_label: "cmt3d"
 
 # Optimization parameters
 parameters:
@@ -62,10 +56,10 @@ parameters:
     scale: 5000.0
     pert: null
   latitude:
-    scale: 1.0
+    scale: 0.1
     pert: null
   longitude:
-    scale: 1.0
+    scale: 0.1
     pert: null
   time_shift:
     scale: 1.0
@@ -92,16 +86,16 @@ parameters:
 
 optimization:
   # Regularization fraction of absmax of the Gauss-Newton Hessian
-  damping: 0.01
+  damping: 0.001
 
   # Max iterations
   niter_max: 10
 
   # Max linesearches
-  nls_max: 5
+  nls_max: 10
 
   # Factor by which to increase alpha
-  factor: 2
+  factor: 2.0
 
   # Stopping criterion relative cost lower than
   stopping_criterion: 1.0e-3
@@ -110,7 +104,7 @@ optimization:
   stopping_criterion_cost_change: 1.0e-4
 
   # Stopping criterion relative modelnorm change lower than
-  stopping_criterion_model: 1.0e-5
+  stopping_criterion_model: 1.0e-10
 
 
 

@@ -20,7 +20,7 @@ def read_status(outdir):
 
     with open(file, "r") as f:
         message = f.read()
-    
+
     return message
 
 
@@ -56,6 +56,7 @@ def update_iter(outdir):
 
     with open(path, "w") as f:
         f.write(f"{iter + 1:d}")
+
 
 def reset_iter(outdir):
 

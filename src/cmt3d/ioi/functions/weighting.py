@@ -2,10 +2,7 @@ import os
 from copy import deepcopy
 import _pickle as pickle
 import numpy as np
-from lwsspy.seismo.source import CMTSource
-from lwsspy.utils.io import read_yaml_file
-from lwsspy.geo.azi_weights import azi_weights
-from lwsspy.geo.geo_weights import GeoWeights
+import cmt3d
 from .data import read_data_windowed, write_data_windowed
 
 
@@ -16,16 +13,16 @@ def compute_weights(outdir):
     metadir = os.path.join(outdir, 'meta')
 
     # Get source
-    cmtsource = CMTSource.from_CMTSOLUTION_file(
+    cmtsource = cmt3d.CMTSource.from_CMTSOLUTION_file(
         os.path.join(metadir, 'init_model.cmt'))
 
     # Get component weighting
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
     weights_rtz = inputparams['component_weights']
     max_weight_ratio = inputparams['max_weight_ratio']
 
     # Get process parameters
-    processparams = read_yaml_file(os.path.join(outdir, 'process.yml'))
+    processparams = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
     wavetypes = processparams.keys()
 
     # Read the data into a dictionary
@@ -81,7 +78,7 @@ def compute_weights(outdir):
 
             # Get azimuthal weights for the traces of each component
             if len(latitudes) > 1 and len(longitudes) > 2:
-                aw = azi_weights(
+                aw = cmt3d.azi_weights(
                     cmtsource.latitude,
                     cmtsource.longitude,
                     latitudes, longitudes, nbins=12, p=0.5)
@@ -94,7 +91,7 @@ def compute_weights(outdir):
                     = deepcopy(aw)
 
                 # Get Geographical weights
-                gw = GeoWeights(latitudes, longitudes)
+                gw = cmt3d.GeoWeights(latitudes, longitudes)
                 _, _, ref, _ = gw.get_condition(ctype='fracmax', param=0.33)
                 geo_weights = gw.get_weights(ref)
 

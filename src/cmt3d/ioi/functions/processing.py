@@ -1,25 +1,19 @@
-# from lwsspy.utils.reset_cpu_affinity import reset_cpu_affinity
+# %%
 import os
 from copy import deepcopy
-from obspy import read, read_events, Stream
-from lwsspy.utils.isipython import isipython
-from lwsspy.utils.reset_cpu_affinity import reset_cpu_affinity
-from lwsspy.utils.io import read_yaml_file
-from lwsspy.seismo.source import CMTSource
-from lwsspy.seismo.process.process import process_stream
-from lwsspy.seismo.process.queue_multiprocess_stream import queue_multiprocess_stream
-from lwsspy.seismo.window.add_tapers import add_tapers
-from lwsspy.seismo.window.window import window_on_stream, merge_trace_windows
-from lwsspy.seismo.window.queue_multiwindow_stream import queue_multiwindow_stream
-from lwsspy.seismo.read_inventory import flex_read_inventory as read_inventory
-from lwsspy.seismo.stream_multiply import stream_multiply
+import cmt3d
+import obspy
+import obsproclib as oprc
+import obswinlib as owl
+
 
 from .constants import Constants
-from .model import read_model, read_model_names, read_perturbation
-from .kernel import write_dsdm
-from .forward import write_synt, read_synt
+from .model import read_model_names, read_perturbation
+from .kernel import write_dsdm, read_dsdm_raw
+from .forward import write_synt, read_synt, read_synt_raw
 from .data import write_data, read_data, write_data_windowed
 from .log import get_iter, get_step
+from .utils import reset_cpu_affinity, isipython
 
 
 def process_data(outdir):
@@ -31,7 +25,7 @@ def process_data(outdir):
     metadir = os.path.join(outdir, 'meta')
 
     # Get CMT
-    cmtsource = CMTSource.from_CMTSOLUTION_file(os.path.join(
+    cmtsource = cmt3d.CMTSource.from_CMTSOLUTION_file(os.path.join(
         metadir, 'init_model.cmt'
     ))
 
@@ -39,10 +33,10 @@ def process_data(outdir):
     eventname = cmtsource.eventname
 
     # Get processing parameters
-    processdict = read_yaml_file(os.path.join(outdir, 'process.yml'))
+    processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     # Get parameters
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
 
     # Get data database
     datadatabase = inputparams["datadatabase"]
@@ -54,10 +48,10 @@ def process_data(outdir):
     multiprocesses = inputparams['multiprocesses']
 
     # Read data
-    data = read(os.path.join(ddatadir, 'waveforms', '*.mseed'))
+    data = obspy.read(os.path.join(ddatadir, 'waveforms', '*.mseed'))
 
     # Read metadata
-    stations = read_inventory(os.path.join(metadir, 'stations.xml'))
+    stations = cmt3d.read_inventory(os.path.join(metadir, 'stations.xml'))
 
     # Process each wavetype.
     for _wtype in processdict.keys():
@@ -89,9 +83,9 @@ def process_data(outdir):
         # Multiprocessing does not work in ipython hence we check first
         # we are in an ipython environment
         if multiprocesses <= 1 or isipython():
-            pdata = process_stream(sdata, **tprocessdict)
+            pdata = oprc.process_stream(sdata, **tprocessdict)
         else:
-            pdata = queue_multiprocess_stream(
+            pdata = oprc.queue_multiprocess_stream(
                 sdata, tprocessdict, nproc=multiprocesses)
 
         print(f"writing data {_wtype} for {outdir}")
@@ -110,27 +104,26 @@ def process_synt(outdir, verbose=True):
 
     # Define directory
     metadir = os.path.join(outdir, 'meta')
-    simudir = os.path.join(outdir, 'simu')
 
     # Get CMT
-    cmtsource = CMTSource.from_CMTSOLUTION_file(os.path.join(
+    cmtsource = cmt3d.CMTSource.from_CMTSOLUTION_file(os.path.join(
         metadir, 'init_model.cmt'
     ))
 
     # Get processing parameters
-    processdict = read_yaml_file(os.path.join(outdir, 'process.yml'))
+    processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     # Get parameters
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
 
     # Read number of processes from input params
     multiprocesses = inputparams['multiprocesses']
 
     # Read data
-    synt = read(os.path.join(simudir, 'synt', 'OUTPUT_FILES', '*.sac'))
+    synt = read_synt_raw(outdir)
 
     # Read metadata
-    stations = read_inventory(os.path.join(metadir, 'stations.xml'))
+    stations = cmt3d.read_inventory(os.path.join(metadir, 'stations.xml'))
 
     # Process each wavetype.
     for _wtype in processdict.keys():
@@ -168,11 +161,11 @@ def process_synt(outdir, verbose=True):
 
             # Verbose output
             if verbose:
-                print(f"    ... in serial.")
-            
+                print("    ... in serial.")
+
             # Processing
-            pdata = process_stream(sdata, **tprocessdict)
-        
+            pdata = oprc.process_stream(sdata, **tprocessdict)
+
         else:
 
             # Verbose output
@@ -180,21 +173,17 @@ def process_synt(outdir, verbose=True):
                 print(f"    ... in parallel using {multiprocesses} cores.")
             # This is sooo important for parallel processing
             # If you don't set this numpy, mkl, etc. will try to use threads
-            # for processing, but you do not want that, because you want to 
-            # distribute work to the different cores manually. If this is not 
+            # for processing, but you do not want that, because you want to
+            # distribute work to the different cores manually. If this is not
             # set, the different cores will fight for threads!!!!
             os.environ["OMP_NUM_THREADS"] = "1"
-            
+
             # Processing
-            pdata = queue_multiprocess_stream(
+            pdata = oprc.queue_multiprocess_stream(
                 sdata, tprocessdict, nproc=multiprocesses, verbose=verbose)
 
         # Write synthetics
         write_synt(pdata, outdir, _wtype, it, ls)
-
-
-# def wprocess_synt(args):
-#     process_synt(*args)
 
 
 def process_dsdm(outdir, nm, verbose=False):
@@ -208,12 +197,9 @@ def process_dsdm(outdir, nm, verbose=False):
 
     # Define directory
     metadir = os.path.join(outdir, 'meta')
-    simudir = os.path.join(outdir, 'simu')
-    sdsmdir = os.path.join(simudir, 'dsdm')
-    ssyndir = os.path.join(simudir, 'synt')
 
     # Get CMT
-    cmtsource = CMTSource.from_CMTSOLUTION_file(os.path.join(
+    cmtsource = cmt3d.CMTSource.from_CMTSOLUTION_file(os.path.join(
         metadir, 'init_model.cmt'
     ))
 
@@ -222,23 +208,22 @@ def process_dsdm(outdir, nm, verbose=False):
     perturbation = read_perturbation(outdir)[nm]
 
     # Get processing parameters
-    processdict = read_yaml_file(os.path.join(outdir, 'process.yml'))
+    processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     # Get parameters
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
 
     # Read number of processes from input params
     multiprocesses = inputparams['multiprocesses']
 
     # Read data
     if mname in Constants.nosimpars:
-        synt = read(os.path.join(ssyndir, 'OUTPUT_FILES', '*.sac'))
+        synt = read_synt_raw(outdir)
     else:
-        synt = read(
-            os.path.join(sdsmdir, f'dsdm{nm:05d}', 'OUTPUT_FILES', '*.sac'))
+        synt = read_dsdm_raw(outdir, nm)
 
     # Read metadata
-    stations = read_inventory(os.path.join(metadir, 'stations.xml'))
+    stations = cmt3d.read_inventory(os.path.join(metadir, 'stations.xml'))
 
     # Process each wavetype.
     for _wtype in processdict.keys():
@@ -273,37 +258,30 @@ def process_dsdm(outdir, nm, verbose=False):
 
             # Verbose output
             if verbose:
-                print(f"    ... in serial.")
+                print("    ... in serial.")
 
             # Processing
-            pdata = process_stream(sdata, **tprocessdict)
+            pdata = oprc.process_stream(sdata, **tprocessdict)
         else:
             # Verbose output
             if verbose:
                 print(f"    ... in parallel using {multiprocesses} cores.")
-            
+
             # This is sooo important for parallel processing
             # If you don't set this numpy, mkl, etc. will try to use threads
-            # for processing, but you do not want that, because you want to 
-            # distribute work to the different cores manually. If this is not 
+            # for processing, but you do not want that, because you want to
+            # distribute work to the different cores manually. If this is not
             # set, the different cores will fight for threads!!!!
             os.environ["OMP_NUM_THREADS"] = "1"
 
             # Processing
-            pdata = queue_multiprocess_stream(
+            pdata = oprc.queue_multiprocess_stream(
                 sdata, tprocessdict, nproc=multiprocesses)
 
-        if perturbation is not None:
-            stream_multiply(pdata, 1.0/perturbation)
-
-        # Compute frechet derivative with respect to time
-        if mname == "time_shift":
-            pdata.differentiate(method='gradient')
-            stream_multiply(pdata, -1.0)
         # If Frechet derivative with respect to depth in m -> divide by 1000
-        # since specfem outputs the derivate with respect to depth in km
-        elif mname == "depth_in_m":
-            stream_multiply(pdata, 1.0/1000.0)
+        # since specfem outputs the derivative with respect to depth in km
+        if mname == "depth_in_m":
+            oprc.stream_multiply(pdata, 1.0/1000.0)
 
         # Write synthetics
         write_dsdm(pdata, outdir, _wtype, nm, it, ls)
@@ -313,7 +291,7 @@ def wprocess_dsdm(args):
     process_dsdm(*args)
 
 
-def merge_windows(data_stream: Stream, synt_stream: Stream):
+def merge_windows(data_stream: obspy.Stream, synt_stream: obspy.Stream):
     """
     After windowing, the windows are often directly adjacent. In such
     cases, we can simply unite the windows. The `merge_windows` method
@@ -329,11 +307,11 @@ def merge_windows(data_stream: Stream, synt_stream: Stream):
         except Exception as e:
             print(
                 "Couldn't find corresponding synt for "
-                "obsd trace({obs_tr.id}): {e}")
+                f"obsd trace({obs_tr.id}): {e}")
             continue
 
         if len(obs_tr.stats.windows) > 1:
-            obs_tr.stats.windows = merge_trace_windows(
+            obs_tr.stats.windows = owl.merge_trace_windows(
                 obs_tr, synt_tr)
 
 
@@ -346,19 +324,19 @@ def window(outdir, verbose=True):
     metadir = os.path.join(outdir, 'meta')
 
     # Get process parameters
-    processdict = read_yaml_file(os.path.join(outdir, 'process.yml'))
+    processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     # Get input parameters
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
 
     # Read number of processes from input params
     multiprocesses = inputparams['multiprocesses']
 
     # Read stations
-    stations = read_inventory(os.path.join(metadir, 'stations.xml'))
+    stations = cmt3d.read_inventory(os.path.join(metadir, 'stations.xml'))
 
     # Read obspy event
-    xml_event = read_events(os.path.join(metadir, 'init_model.cmt'))
+    xml_event = obspy.read_events(os.path.join(metadir, 'init_model.cmt'))
 
     # Window debug flag
     window_debug_flag = True
@@ -376,39 +354,45 @@ def window(outdir, verbose=True):
 
         for window_dict in processdict[_wtype]["window"]:
 
-            # Wrap window dictionary
-            wrapwindowdict = dict(
-                station=stations,
-                event=xml_event,
-                config_dict=window_dict,
-                _verbose=window_debug_flag
-            )
+            if isinstance(window_dict, dict):
+                window_dict = [window_dict]
 
-            # Serial or Multiprocessing
-            if multiprocesses <= 1:
-                 # Verbose output
-                if verbose:
-                    print(f"    ... in serial")
+            for _window_dict in window_dict:
 
-                # Windowing
-                window_on_stream(data, synt, **wrapwindowdict)
-            else:
+                # Wrap window dictionary
+                wrapwindowdict = dict(
+                    station=stations,
+                    event=xml_event,
+                    config_dict=_window_dict,
+                    _verbose=window_debug_flag
+                )
 
-                # Verbose output
-                if verbose:
-                    print(f"    ...in parallel using {multiprocesses} cores.")
+                # Serial or Multiprocessing
+                if multiprocesses <= 1:
+                    # Verbose output
+                    if verbose:
+                        print("    ... in serial")
 
-                # Windowing
-                data = queue_multiwindow_stream(
-                    data, synt,
-                    wrapwindowdict, nproc=multiprocesses, verbose=verbose)
+                    # Windowing
+                    owl.window_on_stream(data, synt, **wrapwindowdict)
+
+                else:
+
+                    # Verbose output
+                    if verbose:
+                        print(f"    ...in parallel using {multiprocesses} cores.")
+
+                    # Windowing
+                    data = owl.queue_multiwindow_stream(
+                        data, synt,
+                        wrapwindowdict, nproc=multiprocesses, verbose=verbose)
 
         if len(processdict[_wtype]["window"]) > 1:
             merge_windows(data, synt)
 
         # After each trace has windows attached continue
-        add_tapers(data, taper_type="tukey",
-                   alpha=0.25, verbose=taper_debug_flag)
+        owl.add_tapers(data, taper_type="tukey",
+                       alpha=0.25, verbose=taper_debug_flag)
 
         # Some traces aren't even iterated over..
         for _tr in data:

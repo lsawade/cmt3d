@@ -1,0 +1,16 @@
+[job]
+system = ["nnodes.job", "LocalMPI"]
+name = "Inversion Test"
+nnodes = 1
+account = "GEO111"
+walltime = 30.0
+gap = 2.0
+debug = true
+node_splittable = true
+
+[root]
+task = ["cmt3d.ioi.nnodes.inversion", "main"]
+inputfile = "/Users/lucassawade/PDrive/Python/Codes/cmt3d/workflow/nnodes/input.yml"
+max_events = 7
+#eventid = "C051200C"
+nproc = 20

@@ -1,7 +1,6 @@
 import os
 import numpy as np
-from lwsspy.utils.io import read_yaml_file
-from lwsspy.seismo.costgradhess import CostGradHess
+import cmt3d
 from .data import read_data_windowed
 from .forward import read_synt
 from .kernel import read_dsdm
@@ -44,6 +43,20 @@ def read_hessian(outdir, it, ls):
     return np.load(file)
 
 
+def read_hessian_all(outdir):
+
+    # Get directory
+    hessdir = os.path.join(outdir, 'hess')
+
+    hesss = []
+    for _cfile in sorted(os.listdir(hessdir)):
+        if "ls00000" in _cfile:
+            hesss.append(np.load(os.path.join(hessdir, _cfile)))
+
+    return np.vstack(hesss)
+
+
+
 def hessian(outdir):
 
     # Get iter,step
@@ -51,10 +64,10 @@ def hessian(outdir):
     ls = get_step(outdir)
 
     # Get input parameters
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
 
     # Get processparameters
-    processparams = read_yaml_file(os.path.join(outdir, 'process.yml'))
+    processparams = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     # Weighting?
     weighting = inputparams['weighting']
@@ -79,7 +92,7 @@ def hessian(outdir):
             dsyn.append(read_dsdm(outdir, _wtype, _i, it, ls))
 
         # Create CostGradHess object
-        cgh = CostGradHess(
+        cgh = cmt3d.CostGradHess(
             data=data,
             synt=synt,
             dsyn=dsyn,
