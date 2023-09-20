@@ -59,7 +59,7 @@ def update_model(outdir):
     ls = get_step(outdir)
 
     # Read model, descent direction, and optvals (alpha)
-    m = read_model(outdir, it, ls - 1)
+    m = read_model(outdir, it, 0)
     dm = read_descent(outdir, it, 0)
     _, _, _, alpha, _, _, _ = read_optvals(outdir, it, ls-1)
 

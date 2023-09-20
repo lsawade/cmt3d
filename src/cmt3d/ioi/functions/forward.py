@@ -128,3 +128,5 @@ def forward(outdir, gfm: GFManager):
 
     # Write synthetics
     write_synt_raw(st, outdir)
+
+

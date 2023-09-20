@@ -14,3 +14,4 @@ inputfile = "/Users/lucassawade/PDrive/Python/Codes/cmt3d/workflow/nnodes/input.
 max_events = 7
 #eventid = "C051200C"
 nproc = 20
+dbname = "glad-m25"

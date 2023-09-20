@@ -232,9 +232,6 @@ def adapt_processdict(cmtsource, processdict, duration):
     proc_params = cmt3d.get_process_parameters(cmtsource.moment_magnitude,
                                                cmtsource.depth_in_m)
 
-    # Print the parameters
-    pprint(proc_params)
-
     # Adjust the process dictionary
     for _wave, _process_dict in proc_params.items():
 
@@ -277,12 +274,9 @@ def adapt_processdict(cmtsource, processdict, duration):
         if _wave not in proc_params:
             popkeys.append(_wave)
 
-    pprint(popkeys)
-
     for _key in popkeys:
         processdict.pop(_key, None)
 
-    pprint(processdict)
     return processdict
 
 

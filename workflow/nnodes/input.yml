@@ -92,7 +92,7 @@ optimization:
   niter_max: 10
 
   # Max linesearches
-  nls_max: 10
+  nls_max: 20
 
   # Factor by which to increase alpha
   factor: 2.0

@@ -39,16 +39,7 @@ outdir, _, _, _, _, _, _, _, _, _, _, _, _, _ = \
 #     rmdir(outdir)
 
 # %%
-
-
-# outdir, modldir, metadir, datadir, simudir, ssyndir, sfredir, syntdir, \
-#     frecdir, costdir, graddir, hessdir, descdir, optdir = \
-#     ioi.optimdir(inputfilename, cmtfilename)
-
-# # %%
-# # Create local parameter files and copy the model files
-# ioi.prepare_inversion_dir(cmtfilename, outdir, inputfilename)
-
+# Make forward dirs
 ioi.create_forward_dirs(cmtfilename, inputfilename)
 
 optimization_dict = cmt3d.read_yaml(inputfilename)['optimization']

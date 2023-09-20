@@ -6,7 +6,8 @@ def update_alpha(w1, w2, alpha_l, alpha_r, alpha, factor=10.0):
     # not a sufficient decrease, we've been too far
     if w1 is False:
         alpha_r = alpha
-        alpha = (alpha_l+alpha_r)*0.5
+        # alpha = (alpha_l+alpha_r)*0.5
+        alpha = alpha_l*0.75+alpha_r*0.25
 
     elif (w1 is True) and (w2 is False):
         alpha_l = alpha
@@ -27,7 +28,7 @@ def wolfe_conditions(
         cost_new,
         alpha,
         c1: float = 1e-4,
-        c2: float = 0.9,
+        c2: float = 1.0,
         strong: bool = False):
     """Checks Wolfe conditions
 

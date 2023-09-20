@@ -63,8 +63,10 @@ def main(node: Node):
 
     scriptdir = '/Users/lucassawade/PDrive/Python/Codes/cmt3d/scripts'
     datadir = os.path.join(scriptdir, 'data')
-    cmtfilename = os.path.join(datadir, 'C201801230931A')
-    subsetfilename = os.path.join(datadir, 'subset.h5')
+    subsetdir = os.path.join(datadir, 'subsets')
+    eventdir = os.path.join(datadir, 'events')
+    cmtfilename = os.path.join(eventdir, 'C201009071613A')
+    subsetfilename = os.path.join(eventdir, 'subset.h5')
 
     eventname = os.path.basename(cmtfilename)
     out = ioi.optimdir(node.inputfile, cmtfilename, get_dirs_only=True)
@@ -76,7 +78,7 @@ def main(node: Node):
              eventname=eventname,
              outdir=outdir,
              eventfile=cmtfilename,
-             subsetfilename=subsetfilename,
+             subsetdir=subsetdir,
              log=os.path.join(outdir, 'logs'))
 # -----------------------------------------------------------------------------
 
@@ -108,15 +110,11 @@ def iteration(node: Node):
                  name=f"create-dir", cwd=node.log)
 
         # Get data
-        # node.add(ioi.get_data, args=(node.outdir,))
+        node.add(ioi.get_data, args=(node.outdir,))
 
         # Load GF
         # Load Green function
-        print('loading gfm')
-
-        GFM_CACHE[node.eventname] = GFManager(node.subsetfilename)
-        GFM_CACHE[node.eventname].load()
-        print('loaded  gfm')
+        node.add(get_subset)
 
         # Forward and frechet modeling
         node.add(forward_frechet)
@@ -159,7 +157,7 @@ def search_step(node):
     node.add(forward_frechet)
     node.add(process_synthetics)
     node.add(compute_cgh)
-    node.add(compute_descent)
+    # node.add(compute_descent)
     node.add(ioi.linesearch, args=(node.outdir,))
     node.add(search_check)
 
@@ -176,6 +174,28 @@ def forward(node: Node):
 
 def frechet(node: Node):
     ioi.kernel(node.outdir, GFM_CACHE[node.eventname])
+
+
+# ------------------
+# Get the subset
+def get_subset(node: Node):
+
+    subsetfilename = os.path.join(node.subsetdir,
+                                  f"{node.eventname}.h5")
+
+    if os.path.exists(subsetfilename) is False:
+        from gf3d.client import GF3DClient
+        gfc = GF3DClient(db=node.dbname)
+        cmt = ioi.get_cmt(node.outdir, 0, 0)
+        gfc.get_subset(subsetfilename, cmt.latitude, cmt.longitude,
+                       cmt.depth_in_m/1000.0, radius_in_km=50.0, NGLL=5,
+                       fortran=False)
+
+    print('loading gfm')
+    GFM_CACHE[node.eventname] = GFManager(subsetfilename)
+    GFM_CACHE[node.eventname].load()
+    print('loaded  gfm')
+
 
 # ----------
 # Processing

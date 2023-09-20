@@ -41,7 +41,7 @@ body:
         c_3b: 2.0
         c_4a: 3.0
         c_4b: 10.0
-        resolution_strategy: interval_scheduling
+        resolution_strategy: merge
         # instrument_merge_flag: True
       components:
         Z:
@@ -83,7 +83,7 @@ body:
         c_3b: 2.0
         c_4a: 3.0
         c_4b: 10.0
-        resolution_strategy: interval_scheduling
+        resolution_strategy: merge
         # instrument_merge_flag: True
       components:
         Z:
@@ -140,7 +140,7 @@ surface:
         c_3b: 2.0
         c_4a: 3.0
         c_4b: 10.0
-        resolution_strategy: interval_scheduling
+        resolution_strategy: merge
         # instrument_merge_flag: True
       components:
         Z:

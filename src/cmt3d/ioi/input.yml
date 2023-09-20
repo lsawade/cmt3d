@@ -46,7 +46,7 @@ parameter_constraints:
   upper: null
 
 # Whether to constrain the moment tensor to have a zero trace
-zero_trace: False
+zero_trace: True
 
 # Whether to overwrite a previous direcotry completely
 overwrite: False

@@ -85,9 +85,9 @@ def bodywave_params(mw: float):
     if mw > 7.5:
         weight = None
     elif mw < 6.5:
-        weight = 1.0
+        weight = float(1.0)
     else:
-        weight = (7.5 - mw) / (7.5 - 6.5)
+        weight = float((7.5 - mw) / (7.5 - 6.5))
 
     # Get filter parameters
     if mw < 6.5:
@@ -126,9 +126,9 @@ def surfacewave_params(mw: float, depth_in_m: float):
         if mw > 7.5:
             weight = None
         elif mw <= 6.5:
-            weight = 1.0
+            weight = float(1.0)
         else:
-            weight = (7.5 - mw) / (7.5 - 6.5)
+            weight = float((7.5 - mw) / (7.5 - 6.5))
 
     if mw <= 7.5:
         filter = [150.0, 100.0, 60.0, 50.0]
@@ -145,11 +145,11 @@ def mantlewave_params(mw: float):
     """Uses the scaled corners from magnitude 7.0 to 8.0"""
 
     if mw > 6.5:
-        weight = 1.0
+        weight = float(1.0)
     elif mw < 5.5:
         weight = None
     else:
-        weight = (mw - 5.5)/(6.5 - 5.5)
+        weight = float((mw - 5.5)/(6.5 - 5.5))
 
 
 
@@ -252,7 +252,7 @@ def get_process_parameters(mw: float, depth_in_m: float):
     # Add body wave parameters if not None
     if bw_weight is not None and bw_weight != 0.0:
         outdict["body"] = dict(
-            weight=float(bw_weight) / normalization,
+            weight=float(bw_weight / normalization),
             filter=bw_filter,
             relative_endtime=bw_time,
             velocity=velocity)
@@ -261,7 +261,7 @@ def get_process_parameters(mw: float, depth_in_m: float):
     if sw_weight is not None \
             and sw_weight != 0.0:
         outdict["surface"] = dict(
-            weight=float(sw_weight) / normalization,
+            weight=float(sw_weight / normalization),
             filter=sw_filter,
             relative_endtime=sw_time,
             velocity=velocity)
@@ -269,7 +269,7 @@ def get_process_parameters(mw: float, depth_in_m: float):
     # Add mantle wave parameters if not None
     if mw_weight is not None and mw_weight != 0.0:
         outdict["mantle"] = dict(
-            weight=float(mw_weight) / normalization,
+            weight=float(mw_weight / normalization),
             filter=mw_filter,
             relative_endtime=mw_time,
             velocity=False)

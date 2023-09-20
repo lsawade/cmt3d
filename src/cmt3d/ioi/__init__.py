@@ -26,10 +26,9 @@ from .functions.utils import optimdir, createdir, rmdir, \
 # These are the functions that are basefunction
 from .functions.log import clear_log
 from .functions.linesearch import \
-    linesearch, check_optvals
+    linesearch, check_optvals, read_optvals
 from .functions.opt import \
     update_model, update_mcgh, check_done, check_status
-
 from .functions.weighting import compute_weights
 
 __all__ = [

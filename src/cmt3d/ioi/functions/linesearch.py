@@ -116,6 +116,10 @@ def check_optvals(outdir, status=True):
 
         return "SUCCESS"
 
+    # elif ls == 3:
+    #     for i in range()
+    #     read_optvals()
+
     # Check linesearch
     elif ls == (nls_max-1) and ((w1 is False) or (w2 is False)):
         if status:
@@ -145,10 +149,12 @@ def linesearch(outdir):
 
     # Get the model update and grad
     dm = read_descent(outdir, it, 0)
+    g0 = read_gradient(outdir, it, 0)
     g = read_gradient(outdir, it, ls)
 
     # Compute q descent dot grad
     q = np.sum(dm*g)
+    q0 = np.sum(dm*g0)
 
     # Read inputparams
     inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))

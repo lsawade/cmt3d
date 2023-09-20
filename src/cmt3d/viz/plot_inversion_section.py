@@ -30,14 +30,14 @@ def plot_inversion_section(outdir, wtype, windows: bool, component='Z'):
     cmt0 = cmts[0]
 
     # Read synthetics
-    synts = ioi.read_synt_all(outdir, wtype)[0:1]
+    synts = ioi.read_synt_all(outdir, wtype)
 
     # Attach geometry
     opl.attach_geometry(data, cmt0.latitude, cmt0.longitude, stations)
     opl.copy_geometry(data, synts)
 
     # Filter windows
-    synt_labels= [f"C: {_c:.4f}" for _c in costs[0:1]]
+    synt_labels= [f"C: {_c:.4f}" for _c in costs]
     data, synts = make_plot_windows(data, synts, synt_labels)
 
     # Get intersection
@@ -45,9 +45,10 @@ def plot_inversion_section(outdir, wtype, windows: bool, component='Z'):
 
     # Plot section
     opl.section(pstreams, labels=["Data", *synt_labels],
-                origin_time=cmt0.origin_time,
+                origin_time=cmt0.origin_time, lw=0.5,
                 comp=component,
                 plot_amplitudes=False,
+                plot_geometry=False,
                 legendargs=dict(loc='lower right', ncol=4, frameon=False,
                                 bbox_to_anchor=(1,1)),
                 window=True)
