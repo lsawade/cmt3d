@@ -9,6 +9,7 @@ from cmt3d.viz.plot_inversion_section import plot_inversion_section
 # %%
 outdir = "/Users/lucassawade/database/nnodes/C201009071613A/"
 
+# %%
 plot_inversion_section(outdir, 'body', windows=False,
                        component='Z')
 
@@ -89,7 +90,7 @@ def plot_cm(cmts, costs, mpar='depth_in_m'):
 
 # %%
 cmts = read_all_cmt(outdir)
-costs =read_all_cost(outdir)
+costs = read_all_cost(outdir)
 plot_cm(cmts, costs, mpar='depth_in_m')
 
 

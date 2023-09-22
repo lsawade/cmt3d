@@ -122,3 +122,7 @@ def kernel(outdir, gfm: GFManager):
 
             # write frechet derivative
             write_dsdm_raw(dsdm[modelname], outdir, _i)
+
+
+
+

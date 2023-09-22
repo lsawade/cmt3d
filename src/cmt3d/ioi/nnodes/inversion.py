@@ -3,7 +3,7 @@ import os
 from nnodes import Node
 from .cache import GFM_CACHE
 from gf3d.seismograms import GFManager
-from cmt3d.source import CMTSource
+import cmt3d
 import cmt3d.ioi as ioi
 
 # ----------------------------- MAIN NODE -------------------------------------
@@ -29,7 +29,7 @@ def main(node: Node):
     #     nevents = []
 
     #     eventnames = [
-    #         CMTSource.from_CMTSOLUTION_file(_file).eventname
+    #         cmt3d.CMTSource.from_CMTSOLUTION_file(_file).eventname
     #         for _file in eventfiles]
 
     #     # Check whether multiple eventids are requested
@@ -57,7 +57,7 @@ def main(node: Node):
 
     # Loop over inversions
     # for event in eventfiles:
-    #     eventname = CMTSource.from_CMTSOLUTION_file(event).eventname
+    #     eventname = cmt3d.CMTSource.from_CMTSOLUTION_file(event).eventname
     #     out = optimdir(node.inputfile, event, get_dirs_only=True)
     #     outdir = out[0]
 
@@ -66,13 +66,16 @@ def main(node: Node):
     subsetdir = os.path.join(datadir, 'subsets')
     eventdir = os.path.join(datadir, 'events')
     cmtfilename = os.path.join(eventdir, 'C201009071613A')
-    subsetfilename = os.path.join(eventdir, 'subset.h5')
 
     eventname = os.path.basename(cmtfilename)
     out = ioi.optimdir(node.inputfile, cmtfilename, get_dirs_only=True)
     outdir = out[0]
+
     if os.path.exists(outdir):
+
         node.rm(outdir)
+        # ioi.reset_iter(outdir)
+        # ioi.reset_step(outdir)
 
     node.add(cmtinversion, concurrent=False, name=eventname,
              eventname=eventname,
@@ -110,7 +113,7 @@ def iteration(node: Node):
                  name=f"create-dir", cwd=node.log)
 
         # Get data
-        node.add(ioi.get_data, args=(node.outdir,))
+        # node.add(ioi.get_data, args=(node.outdir,))
 
         # Load GF
         # Load Green function
@@ -123,10 +126,7 @@ def iteration(node: Node):
         node.add(process_all, name='process-all', cwd=node.log)
 
         # Windowing
-        node.add_mpi(ioi.window, args=(node.outdir,),
-                     nprocs=1, cpus_per_proc=4,
-                     cwd=node.log)
-
+        node.add(window, name='window')
         # Weighting
         node.add(ioi.compute_weights, args=(node.outdir,))
 
@@ -146,6 +146,7 @@ def iteration(node: Node):
     node.add(iteration_check)
 
 
+
 # Performs linesearch
 def linesearch(node):
     node.add(search_step)
@@ -155,7 +156,7 @@ def search_step(node):
     node.add(ioi.update_step, args=(node.outdir,))
     node.add(ioi.update_model, args=(node.outdir,))
     node.add(forward_frechet)
-    node.add(process_synthetics)
+    node.add(process_synt_and_dsdm)
     node.add(compute_cgh)
     # node.add(compute_descent)
     node.add(ioi.linesearch, args=(node.outdir,))
@@ -169,6 +170,26 @@ def forward_frechet(node: Node):
     node.add(forward)
     node.add(frechet)
 
+def forward_frechet_mpi(node: Node):
+
+    mnames = ioi.read_model_names(node.outdir)
+    counter = 0
+    for _mname in mnames:
+
+        if _mname in ioi.Constants.locations:
+            counter += 2
+        else:
+            counter += 1
+
+    # One extra for synthetics.
+    counter += 1
+
+    # Forward
+    node.add_mpi(ioi.forward_kernel, nprocs=counter,
+                 args=(node.outdir,), name='forward-frechet-mpi',
+                 cwd=node.log)
+
+
 def forward(node: Node):
     ioi.forward(node.outdir, GFM_CACHE[node.eventname])
 
@@ -179,6 +200,22 @@ def frechet(node: Node):
 # ------------------
 # Get the subset
 def get_subset(node: Node):
+    inputparams = cmt3d.read_yaml(os.path.join(node.outdir, 'input.yml'))
+
+    backend = inputparams['backend']
+
+    if backend == 'mpi' and False:
+        node.add(get_subset_mpi)
+    else:
+        node.add(get_subset_local)
+
+
+def get_subset_mpi(node: Node):
+    node.add(ioi.create_gfm, args=(node.outdir, node.dbname))
+
+
+
+def get_subset_local(node: Node):
 
     subsetfilename = os.path.join(node.subsetdir,
                                   f"{node.eventname}.h5")
@@ -196,40 +233,155 @@ def get_subset(node: Node):
     GFM_CACHE[node.eventname].load()
     print('loaded  gfm')
 
-
 # ----------
 # Processing
 def process_all(node: Node):
     node.concurrent = True
-
-    node.add_mpi(
-        ioi.process_data, args=(node.outdir,),
-        nprocs=1, cpus_per_proc=4,
-        name='process_data', cwd=node.log)
+    node.add(process_data)
     node.add(process_synthetics)
+    node.add(process_dsdm)
+
+
+def process_synt_and_dsdm(node: Node):
+    node.concurrent = True
+    node.add(process_synthetics)
+    node.add(process_dsdm)
+
+
+def process_data(node: Node):
+    node.concurrent = True
+
+    # Get processing parameters
+    inputparams = cmt3d.read_yaml(os.path.join(node.outdir, 'input.yml'))
+    multiprocesses = inputparams['multiprocesses']
+    backend = inputparams['backend']
+
+    # Get parameters
+    processdict = cmt3d.read_yaml(os.path.join(node.outdir, 'process.yml'))
+
+    for wavetype in processdict.keys():
+
+        if multiprocesses == 1 or backend == 'multiprocessing':
+            node.add_mpi(
+                ioi.process_data_wave, args=(node.outdir, wavetype, True),
+                nprocs=1, cpus_per_proc=multiprocesses,
+                name=f'process_data_{wavetype}', cwd=node.log)
+
+        elif multiprocesses > 1 and backend == 'mpi':
+
+            node.add_mpi(
+                ioi.process_data_wave_mpi, args=(node.outdir, wavetype, True),
+                nprocs=multiprocesses,
+                name=f'process_data_{wavetype}_mpi', cwd=node.log)
+
+        else:
+            raise ValueError('Double check your backend/multiprocessing setup')
 
 
 # Process forward & frechet
 def process_synthetics(node: Node):
     node.concurrent = True
 
-    # Process the normal synthetics
-    node.add_mpi(
-        ioi.process_synt, args=(node.outdir, ),
-        nprocs=1, cpus_per_proc=4,
-        name='process_synt',
-        cwd=node.log)
+    # Get processing parameters
+    inputparams = cmt3d.read_yaml(os.path.join(node.outdir, 'input.yml'))
+    multiprocesses = inputparams['multiprocesses']
+    backend = inputparams['backend']
+
+    # Get parameters
+    processdict = cmt3d.read_yaml(os.path.join(node.outdir, 'process.yml'))
+
+    for wavetype in processdict.keys():
+
+        if multiprocesses == 1 or backend == 'multiprocessing':
+            # Process the normal synthetics
+            node.add_mpi(
+                ioi.process_synt_wave, args=(node.outdir, wavetype),
+                nprocs=1, cpus_per_proc=multiprocesses,
+                name=f'process_synt_{wavetype}',
+                cwd=node.log)
+        elif multiprocesses > 1 and backend == 'mpi':
+            node.add_mpi(
+                ioi.process_synt_wave_mpi, args=(node.outdir, wavetype),
+                nprocs=multiprocesses, name=f'process_synt_{wavetype}_mpi',
+                cwd=node.log)
+        else:
+            raise ValueError('Double check your backend/multiprocessing setup')
+
+
+# Process forward & frechet
+def process_dsdm(node: Node):
+
+    node.concurrent = True
+
+    # Get processing parameters
+    inputparams = cmt3d.read_yaml(os.path.join(node.outdir, 'input.yml'))
+    multiprocesses = inputparams['multiprocesses']
+    backend = inputparams['backend']
+
+    # Get parameters
+    processdict = cmt3d.read_yaml(os.path.join(node.outdir, 'process.yml'))
 
     # Process the frechet derivatives
     NM = len(ioi.read_model_names(node.outdir))
 
-    for _i in range(NM):
+    # Loop over wave types and model parameters
+    for wavetype in processdict.keys():
 
-        node.add_mpi(
-            ioi.process_dsdm, args=(node.outdir, _i),
-            nprocs=1, cpus_per_proc=4,
-            name=f'process_dsdm{_i:05d}',
-            cwd=node.log)
+        for _i in range(NM):
+
+            if multiprocesses == 1 or backend == 'multiprocessing':
+                node.add_mpi(
+                    ioi.process_dsdm_wave, args=(node.outdir, _i, wavetype, True),
+                    nprocs=1, cpus_per_proc=multiprocesses,
+                    name=f'process_dsdm{_i:05d}_{wavetype}',
+                    cwd=node.log)
+
+            elif multiprocesses > 1 and backend == 'mpi':
+                node.add_mpi(
+                    ioi.process_dsdm_wave_mpi, args=(
+                        node.outdir, _i, wavetype, True),
+                    nprocs=1, cpus_per_proc=multiprocesses,
+                    name=f'process_dsdm{_i:05d}_{wavetype}_mpi',
+                    cwd=node.log)
+
+            else:
+                raise ValueError('Double check your backend/multiprocessing setup')
+
+
+# ------------------
+# windowing
+def window(node: Node):
+    node.concurrent = True
+
+    # Get processing parameters
+    inputparams = cmt3d.read_yaml(os.path.join(node.outdir, 'input.yml'))
+    multiprocesses = inputparams['multiprocesses']
+    backend = inputparams['backend']
+
+    # Get parameters
+    processdict = cmt3d.read_yaml(os.path.join(node.outdir, 'process.yml'))
+
+    for wavetype in processdict.keys():
+
+        if multiprocesses == 1 or backend == 'multiprocessing':
+            # Process the normal synthetics
+            node.add_mpi(ioi.window, args=(node.outdir,),
+                         nprocs=1, cpus_per_proc=multiprocesses*3,
+                         name=f'window_{wavetype}',
+                         cwd=node.log)
+
+        elif multiprocesses > 1 and backend == 'mpi':
+
+            node.add_mpi(
+                ioi.window_wave_mpi, args=(node.outdir, wavetype, True),
+                nprocs=multiprocesses*3, name=f'window_{wavetype}_mpi',
+                cwd=node.log)
+        else:
+
+            raise ValueError('Double check your backend/multiprocessing setup')
+
+
+
 
 # ------------------
 # Updating the model

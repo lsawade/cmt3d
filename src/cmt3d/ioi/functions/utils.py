@@ -654,3 +654,34 @@ def cmt3d2gf3d(cmt3d_source: cmt3d.CMTSource) -> CMTSOLUTION:
     )
 
     return cmt
+
+
+def create_gfm(outdir, dbname: str):
+
+    # Subset file in meta directory
+    subsetfilename = os.path.join(outdir, 'meta', "subset.h5")
+    loaded_pickle = os.path.join(outdir, 'meta', 'gfm.pkl')
+
+    # Hello
+    if os.path.exists(subsetfilename) is False:
+
+        from gf3d.client import GF3DClient
+        gfc = GF3DClient(db=dbname)
+
+        # Read original CMT solution
+        cmt = cmt3d.CMTSource.from_CMTSOLUTION_file(
+            os.path.join(outdir, 'meta', 'init_model.cmt'))
+
+        # Get subset
+        gfc.get_subset(subsetfilename, cmt.latitude, cmt.longitude,
+                       cmt.depth_in_m/1000.0, radius_in_km=50.0, NGLL=5,
+                       fortran=False)
+
+    if os.path.exists(loaded_pickle) is False:
+        from gf3d.seismograms import GFManager
+        print('--> loading gfm')
+        gfm = GFManager(subsetfilename)
+        gfm.load()
+        print('-->loaded  gfm')
+
+        cmt3d.write_pickle(loaded_pickle, gfm)
