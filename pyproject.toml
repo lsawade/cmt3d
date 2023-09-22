@@ -32,6 +32,7 @@ dependencies = [
     "scipy",
     "obsproclib",
     "obswinlib",
+    "obsplotlib"
 ]
 
 [project.optional-dependencies]
