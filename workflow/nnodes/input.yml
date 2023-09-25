@@ -1,8 +1,12 @@
 # Inputs. Put full path for safety (~ often isn't recognized by Python)
-database: /Users/lucassawade/database/nnodes
+#database: /Users/lucassawade/database/nnodes             # Personal
+# database: /scratch/gpfs/lsawade/gcmt/db/nnodes          # Traverse
+database: /gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes # SUMMIT
 
 # For creating and grabbing from the observed data
-datadatabase: /Users/lucassawade/database/data
+# datadatabase: /Users/lucassawade/database/data            # Personal
+# datadatabase: /scratch/gpfs/lsawade/gcmt/db/data          # Traverse
+datadatabase: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data # SUMMIT
 
 # Eventstatus directory
 event_status: /home/lsawade/database/events
@@ -12,7 +16,7 @@ processparams: null
 
 # Multiprocesses: Number of cores to use for the processing
 backend: mpi #['multiprocessing', 'mpi']
-multiprocesses: 4
+multiprocesses: 1
 
 # Define whether to download data or not
 download_data: True
@@ -55,7 +59,7 @@ solution_label: "cmt3d"
 parameters:
   depth_in_m:
     scale: 5000.0
-    pert: 0.01
+    pert: 10.0
   latitude:
     scale: 0.1
     pert: 0.001
@@ -106,7 +110,5 @@ optimization:
 
   # Stopping criterion relative modelnorm change lower than
   stopping_criterion_model: 1.0e-10
-
-
 
   # Other parameters.

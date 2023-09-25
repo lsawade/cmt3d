@@ -656,8 +656,7 @@ def cmt3d2gf3d(cmt3d_source: cmt3d.CMTSource) -> CMTSOLUTION:
     return cmt
 
 
-def create_gfm(outdir, dbname: str):
-
+def create_gfm(outdir, dbname: str, local: bool = True):
     # Subset file in meta directory
     subsetfilename = os.path.join(outdir, 'meta', "subset.h5")
     loaded_pickle = os.path.join(outdir, 'meta', 'gfm.pkl')
@@ -665,19 +664,49 @@ def create_gfm(outdir, dbname: str):
     # Hello
     if os.path.exists(subsetfilename) is False:
 
-        from gf3d.client import GF3DClient
-        gfc = GF3DClient(db=dbname)
 
         # Read original CMT solution
         cmt = cmt3d.CMTSource.from_CMTSOLUTION_file(
             os.path.join(outdir, 'meta', 'init_model.cmt'))
 
-        # Get subset
-        gfc.get_subset(subsetfilename, cmt.latitude, cmt.longitude,
-                       cmt.depth_in_m/1000.0, radius_in_km=50.0, NGLL=5,
-                       fortran=False)
+
+        if local:
+
+            from glob import glob
+            from gf3d.seismograms import GFManager
+
+            # Check for files given database path
+            db_globstr = os.path.join(dbname, '*', '*', '*.h5')
+
+            # Get all files
+            db_files = glob(db_globstr)
+
+            # Check if there are any files
+            if len(db_files) == 0:
+                raise ValueError(f'No files found in {dbname} directory. '
+                                'Please check path.')
+
+            else:
+                # Get subset
+                GFM = GFManager(db_files)
+                GFM.load_header_variables()
+                GFM.write_subset_directIO(subsetfilename,
+                    cmt.latitude, cmt.longitude, cmt.depth_in_m/1000.0,
+                    dist_in_km=50.0, NGLL=5,
+                    fortran=False)
+
+        else:
+
+            from gf3d.client import GF3DClient
+            gfc = GF3DClient(db=dbname)
+
+            # Get subset
+            gfc.get_subset(subsetfilename, cmt.latitude, cmt.longitude,
+                        cmt.depth_in_m/1000.0, radius_in_km=50.0, NGLL=5,
+                        fortran=False)
 
     if os.path.exists(loaded_pickle) is False:
+
         from gf3d.seismograms import GFManager
         print('--> loading gfm')
         gfm = GFManager(subsetfilename)

@@ -1,4 +1,4 @@
-from mpi4py import MPI
+
 from .utils import downloaddir
 from .get_data import get_data
 from lwsspy.utils.io import read_yaml_file
@@ -20,6 +20,7 @@ def get_data_mpi(args):
     eventfiles, inputfile = args
 
     # Get MPI stuff
+    from mpi4py import MPI
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()

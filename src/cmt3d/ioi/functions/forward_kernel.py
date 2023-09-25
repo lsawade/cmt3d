@@ -127,13 +127,13 @@ def forward_kernel(outdir):
         for tr in drp:
             tr.data *= -1
 
-        idx = model_names.index(names[0])
+        idx = model_names.index(name)
         write_dsdm_raw(drp, outdir, idx)
         drp = [None,]
 
     elif name in Constants.mt_params:
 
-        idx = model_names.index(names[0])
+        idx = model_names.index(name)
         pert = perturbation[idx]
 
         for tr in drp:
@@ -158,6 +158,14 @@ def forward_kernel(outdir):
 
             pidx = names.index(_mname + '_pos')
             midx = names.index(_mname + '_neg')
+
+            # Correction to make the output
+            if _mname == "depth_in_m":
+                pert = _pert * 1000.0
+                # m/km -> making the dervative per km instead for
+                # conformity with GFM.get_frechet, output
+            else:
+                pert = _pert
 
             for ptr, mtr in zip(drp[pidx], drp[midx]):
                 ptr.data -= mtr.data

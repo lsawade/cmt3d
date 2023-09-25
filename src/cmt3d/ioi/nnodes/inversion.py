@@ -9,6 +9,7 @@ import cmt3d.ioi as ioi
 # ----------------------------- MAIN NODE -------------------------------------
 # Loops over events: TODO smarter event check
 def main(node: Node):
+
     node.concurrent = True
 
     # # Events to be inverted
@@ -61,7 +62,7 @@ def main(node: Node):
     #     out = optimdir(node.inputfile, event, get_dirs_only=True)
     #     outdir = out[0]
 
-    scriptdir = '/Users/lucassawade/PDrive/Python/Codes/cmt3d/scripts'
+    scriptdir = "/ccs/home/lsawade/gcmt/cmt3d/scripts"
     datadir = os.path.join(scriptdir, 'data')
     subsetdir = os.path.join(datadir, 'subsets')
     eventdir = os.path.join(datadir, 'events')
@@ -112,15 +113,16 @@ def iteration(node: Node):
         node.add(ioi.create_forward_dirs, args=(node.eventfile, node.inputfile),
                  name=f"create-dir", cwd=node.log)
 
-        # Get data
-        # node.add(ioi.get_data, args=(node.outdir,))
-
         # Load GF
         # Load Green function
         node.add(get_subset)
 
+        # Get data
+        # node.add(ioi.get_data, args=(node.outdir,))
+
+
         # Forward and frechet modeling
-        node.add(forward_frechet)
+        node.add(forward_frechet_mpi)
 
         # Process the data and the synthetics
         node.add(process_all, name='process-all', cwd=node.log)
@@ -155,10 +157,9 @@ def linesearch(node):
 def search_step(node):
     node.add(ioi.update_step, args=(node.outdir,))
     node.add(ioi.update_model, args=(node.outdir,))
-    node.add(forward_frechet)
+    node.add(forward_frechet_mpi)
     node.add(process_synt_and_dsdm)
     node.add(compute_cgh)
-    # node.add(compute_descent)
     node.add(ioi.linesearch, args=(node.outdir,))
     node.add(search_check)
 
@@ -204,29 +205,59 @@ def get_subset(node: Node):
 
     backend = inputparams['backend']
 
-    if backend == 'mpi' and False:
+    if backend == 'mpi' and True:
         node.add(get_subset_mpi)
     else:
         node.add(get_subset_local)
 
 
 def get_subset_mpi(node: Node):
-    node.add(ioi.create_gfm, args=(node.outdir, node.dbname))
+    node.add_mpi(ioi.create_gfm, nprocs=1, cpus_per_proc=36,
+                 args=(node.outdir, node.dbname, node.db_is_local),
+                 name='Create_GFM', cwd=node.log)
 
 
 
 def get_subset_local(node: Node):
 
-    subsetfilename = os.path.join(node.subsetdir,
-                                  f"{node.eventname}.h5")
+
+    subsetfilename = os.path.join(node.outdir, 'meta', "subset.h5")
 
     if os.path.exists(subsetfilename) is False:
-        from gf3d.client import GF3DClient
-        gfc = GF3DClient(db=node.dbname)
-        cmt = ioi.get_cmt(node.outdir, 0, 0)
-        gfc.get_subset(subsetfilename, cmt.latitude, cmt.longitude,
-                       cmt.depth_in_m/1000.0, radius_in_km=50.0, NGLL=5,
-                       fortran=False)
+
+        if node.db_is_local:
+
+            from glob import glob
+
+            # Check for files given database path
+            db_globstr = os.path.join(node.dbname, '*', '*', '*.h5')
+
+            # Get all files
+            db_files = glob(db_globstr)
+
+            # Check if there are any files
+            if len(db_files) == 0:
+                raise ValueError(f'No files found in {node.dbname} directory. '
+                                'Please check path.')
+
+            else:
+                # Get subset
+                GFM = GFManager(db_files)
+                GFM.load_header_variables()
+                cmt = ioi.get_cmt(node.outdir, 0, 0)
+                GFM.write_subset_directIO(subsetfilename,
+                    cmt.latitude, cmt.longitude, cmt.depth_in_m/1000.0,
+                    dist_in_km=50.0, NGLL=5,
+                    fortran=False)
+
+        else:
+
+
+            from gf3d.client import GF3DClient
+            gfc = GF3DClient(db=node.dbname)
+            cmt = ioi.get_cmt(node.outdir, 0, 0)
+            gfc.get_subset(subsetfilename, NGLL=5,
+                        fortran=False)
 
     print('loading gfm')
     GFM_CACHE[node.eventname] = GFManager(subsetfilename)
@@ -261,17 +292,17 @@ def process_data(node: Node):
 
     for wavetype in processdict.keys():
 
-        if multiprocesses == 1 or backend == 'multiprocessing':
+        if backend == 'multiprocessing':
             node.add_mpi(
-                ioi.process_data_wave, args=(node.outdir, wavetype, True),
+                ioi.process_data_wave, args=(node.outdir, wavetype),
                 nprocs=1, cpus_per_proc=multiprocesses,
                 name=f'process_data_{wavetype}', cwd=node.log)
 
-        elif multiprocesses > 1 and backend == 'mpi':
+        elif backend == 'mpi':
 
             node.add_mpi(
                 ioi.process_data_wave_mpi, args=(node.outdir, wavetype, True),
-                nprocs=multiprocesses,
+                nprocs=3,
                 name=f'process_data_{wavetype}_mpi', cwd=node.log)
 
         else:
@@ -363,18 +394,18 @@ def window(node: Node):
 
     for wavetype in processdict.keys():
 
-        if multiprocesses == 1 or backend == 'multiprocessing':
+        if backend == 'multiprocessing':
             # Process the normal synthetics
             node.add_mpi(ioi.window, args=(node.outdir,),
                          nprocs=1, cpus_per_proc=multiprocesses*3,
                          name=f'window_{wavetype}',
                          cwd=node.log)
 
-        elif multiprocesses > 1 and backend == 'mpi':
+        elif backend == 'mpi':
 
             node.add_mpi(
                 ioi.window_wave_mpi, args=(node.outdir, wavetype, True),
-                nprocs=multiprocesses*3, name=f'window_{wavetype}_mpi',
+                nprocs=14, name=f'window_{wavetype}_mpi',
                 cwd=node.log)
         else:
 
@@ -424,23 +455,23 @@ def compute_cost(node: Node):
 
 # Gradient
 def compute_gradient(node: Node):
-    node.add(ioi.gradient, args=(node.outdir,), name=f"grad", cwd=node.log)
+    node.add_mpi(ioi.gradient, args=(node.outdir,), name=f"grad", cwd=node.log)
 
 
 # Hessian
 def compute_hessian(node: Node):
-    node.add(ioi.hessian, args=(node.outdir,), name=f"hess", cwd=node.log)
+    node.add_mpi(ioi.hessian, args=(node.outdir,), name=f"hess", cwd=node.log)
 
 
 # Descent
 def compute_descent(node: Node):
-    node.add(ioi.descent, args=(node.outdir,), name=f"descent", cwd=node.log)
+    node.add_mpi(ioi.descent, args=(node.outdir,), name=f"descent", cwd=node.log)
 
 # ----------
 # Linesearch
 
 def compute_optvals(node: Node):
-    node.add(ioi.check_optvals, args=(node.outdir,))
+    node.add_mpi(ioi.check_optvals, args=(node.outdir,))
 
 
 # Check whether to add another iteration

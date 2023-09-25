@@ -479,8 +479,8 @@ def process_dsdm_wave(outdir, nm, wavetype, verbose=True):
 
     # If Frechet derivative with respect to depth in m -> divide by 1000
     # since specfem outputs the derivative with respect to depth in km
-    if mname == "depth_in_m":
-        oprc.stream_multiply(pdata, 1.0/1000.0)
+    # if mname == "depth_in_m":
+    #     oprc.stream_multiply(pdata, 1.0/1000.0)
 
     # Write synthetics
     write_dsdm(pdata, outdir, wavetype, nm, it, ls)

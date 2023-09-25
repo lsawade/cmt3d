@@ -7,7 +7,6 @@
 
 """
 
-from mpi4py import MPI
 from sys import exit, argv
 from ..functions.get_data_mpi import get_data_mpi
 from ..functions.events import check_events_todownload
@@ -27,6 +26,7 @@ def bin():
     """
 
     # Get MPI stuff
+    from mpi4py import MPI
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
@@ -52,7 +52,7 @@ def bin():
         # Number of events to download
         ND = len(eventfiles)
 
-        # # If the number of events is smaller than the number of available 
+        # # If the number of events is smaller than the number of available
         # # workers. Stop
         # if size > ND:
         #     errorflag = True

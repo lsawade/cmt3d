@@ -1,17 +1,19 @@
 [job]
-system = ["nnodes.job", "LocalMPI"]
+system = ["nnodes.job", "DTN"]
 name = "Inversion Test"
 nnodes = 1
 account = "GEO111"
-walltime = 30.0
+walltime = 60.0
 gap = 2.0
 debug = true
 node_splittable = true
 
 [root]
-task = ["cmt3d.ioi.nnodes.inversion", "main"]
-inputfile = "/Users/lucassawade/PDrive/Python/Codes/cmt3d/workflow/nnodes/input.yml"
-max_events = 7
+# task = ["cmt3d.ioi.nnodes.inversion", "main"]
+task = ["cmt3d.ioi.nnodes.download", "main"]
+inputfile = "/ccs/home/lsawade/gcmt/cmt3d/workflow/nnodes/input.yml"
+max_evenllts = 7
 #eventid = "C051200C"
 nproc = 20
-dbname = "glad-m25"
+dbname = "/gpfs/alpine/geo111/scratch/lsawade/DB/GLAD-M25/128_single" # "glad-m25"
+db_is_local = true

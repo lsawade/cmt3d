@@ -110,7 +110,7 @@ optimization:
   stopping_criterion_cost_change: 1.0e-4
 
   # Stopping criterion relative modelnorm change lower than
-  stopping_criterion_model: 1.0e-5
+  stopping_criterion_model: 1.0e-6
 
 
 
