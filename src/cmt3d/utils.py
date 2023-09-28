@@ -99,14 +99,34 @@ class retry():
 
     def __call__(self, f: tp.Callable):
         def wrapped_f(*args, **kwargs):
-            for _ in range(self.retries):
+            for i in range(self.retries):
                 try:
                     retval = f(*args, **kwargs)
-                except socket.timeout:
+                except Exception as e:
+                    print(f'Retry caught exception try {i+1}/{self.retries}')
+                    print(e)
                     time.sleep(self.wait_time)
                     continue
                 else:
                     return retval
-                raise
+
+            raise ValueError(f'Failed after {self.retries} retries.')
 
         return wrapped_f
+
+
+def chunkfunc(sequence: tp.Sequence, n: int):
+    """
+    Converse to split, this function preserves the order of the events. But,
+    the last chunk has potentially only a single element. For the case, of
+    I/O this is not so bad, but if you are looking for performance, `split()`
+    above is the better option.
+
+    sequence = sequence to be split
+    n = number of elements per chunk
+
+    return list of n-element chunks where the number of chunks depends on the
+    length of the sequence
+    """
+    n = max(1, n)
+    return [sequence[i:i+n] for i in range(0, len(sequence), n)]

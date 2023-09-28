@@ -1,9 +1,9 @@
 import os
 import numpy as np
+import cmt3d
 from .model import read_model, read_model_names, read_scaling
 from .gradient import read_gradient
 from .hessian import read_hessian
-from lwsspy.utils.io import read_yaml_file
 from .log import get_iter, get_step, write_log
 
 
@@ -89,7 +89,7 @@ def descent(outdir):
     metadir = os.path.join(outdir, 'meta')
 
     # Get damping value
-    inputparams = read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml_file(os.path.join(outdir, 'input.yml'))
 
     # Get damping value
     damping = inputparams['optimization']['damping']

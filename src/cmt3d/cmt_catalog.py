@@ -17,7 +17,6 @@ try:
 except ModuleNotFoundError:
     pass
 
-
 from .source import CMTSource
 from . import sourcedecomposition
 from cmt3d.utils import sec2hhmmss

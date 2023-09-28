@@ -58,7 +58,7 @@ entk = [
 "Documentation" = "http://lsawade.github.io/cmt3d"
 
 [project.scripts]  # Optional
-# opl = "obsplotlib.__main.__:main"
+cmt3d-download-gcmt-catalog = "cmt3d.download_gcmt_catalog:bin"
 
 [tool.setuptools]
 # If there are data files included in your packages that need to be

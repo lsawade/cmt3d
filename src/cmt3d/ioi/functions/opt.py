@@ -164,7 +164,7 @@ def check_done(outdir):
 
     init_cost_change = cost/cost_init
     rel_cost_change = np.abs(cost - cost_old)/cost_init
-    rel_model_change = np.sum(smodel - smodel_prev)**2/np.sum((smodel_prev)**2)
+    rel_model_change = np.sum((smodel - smodel_prev)**2)/np.sum((smodel_prev)**2)
 
     write_log(outdir, f"      init_cost_change: {init_cost_change}")
     write_log(outdir, f"      rel_cost_change: {rel_cost_change}")

@@ -9,14 +9,10 @@ database: /gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes # SUMMIT
 datadatabase: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data # SUMMIT
 
 # Eventstatus directory
-event_status: /home/lsawade/database/events
+events: /gpfs/alpine/geo111/scratch/lsawade/gcmt/events
 
 # For the default also the default process parameters are used
 processparams: null
-
-# Multiprocesses: Number of cores to use for the processing
-backend: mpi #['multiprocessing', 'mpi']
-multiprocesses: 1
 
 # Define whether to download data or not
 download_data: True
@@ -106,7 +102,7 @@ optimization:
   stopping_criterion: 1.0e-3
 
   # Stopping criterion relative cost change lower than
-  stopping_criterion_cost_change: 1.0e-4
+  stopping_criterion_cost_change: 1.0e-5
 
   # Stopping criterion relative modelnorm change lower than
   stopping_criterion_model: 1.0e-10

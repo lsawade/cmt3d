@@ -2,11 +2,12 @@ import argparse
 import logging
 import os
 from typing import Union, List
-from lwsspy.utils.retry import retry
 from obspy import Inventory
 from obspy import UTCDateTime
 from obspy.clients.fdsn.mass_downloader import RectangularDomain, \
     Restrictions, MassDownloader
+
+from .utils import retry
 
 
 def download_waveforms_to_storage(
@@ -90,8 +91,9 @@ def download_waveforms_to_storage(
     logger.debug(f"XMLs:   {station_storage}")
 
     mdl.download(domain, restrictions, mseed_storage=waveform_storage,
-                 stationxml_storage=station_storage, **kwargs)
-                 
+                 stationxml_storage=station_storage,
+                 **kwargs)
+
     logger.debug("\n")
     logger.debug(72 * "*")
     logger.debug("\n")

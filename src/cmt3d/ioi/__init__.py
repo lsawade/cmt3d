@@ -15,7 +15,7 @@ from .functions.kernel import kernel, read_dsdm, write_dsdm, read_dsdm_raw, \
     write_dsdm_raw
 from .functions.forward_kernel import forward_kernel
 from .functions.log import update_iter, update_step, reset_step, get_iter, \
-    reset_iter
+    reset_iter, read_status
 from .functions.model import read_model, write_model, get_cmt, \
     get_simpars, get_iter, get_step, read_model_names, read_perturbation, \
     read_scaling, read_model_all, get_cmt_all

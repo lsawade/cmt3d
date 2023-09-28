@@ -4,92 +4,59 @@ from nnodes import Node
 import cmt3d
 import cmt3d.ioi as ioi
 
+
+
+
 # ----------------------------- MAIN NODE -------------------------------------
 # Loops over events: TODO smarter event check
 def main(node: Node):
     node.concurrent = True
 
-    # # Events to be inverted
-    # print('Checking events TODO ...')
-    # eventfiles = check_events_todo(node.inputfile)
+    print('Hello')
+    node.concurrent = False
 
-    # # Specific event id(s)
-    # eventflag = True if node.eventid is not None else False
-    # print('Specfic event(s)?', eventflag)
+    # Get input file
+    inputparams = cmt3d.read_yaml(node.inputfile)
 
-    # # Maximum inversion flag
-    # maxflag = True if node.max_events != 0 else False
-    # print('Maximum # of events?', maxflag)
+    # Get todo events
+    event_dir = inputparams['events']
 
-    # # If eventid in files only use the ids
-    # if eventflag:
-    #     print('Getting specific events...')
-    #     nevents = []
+    # Get all events
+    events = [os.path.join(event_dir, ev_file)
+              for ev_file in os.listdir(event_dir)]
 
-    #     eventnames = [
-    #         cmt3d.CMTSource.from_CMTSOLUTION_file(_file).eventname
-    #         for _file in eventfiles]
+    # Sort the events
+    events.sort()
 
-    #     # Check whether multiple eventids are requested
-    #     if isinstance(node.eventid, list):
-    #         eventids = node.eventid
-    #     else:
-    #         eventids = [node.eventid]
+    # The massdownloader suggest only 4 threads at a time. So here
+    # we are doing 4 simultaneous events with each 1 thread
+    event_chunks = cmt3d.chunkfunc(events, 4)
 
-    #     # If id in eventnames, add the eventfile
-    #     for _id in eventids:
-    #         idx = eventnames.index(_id)
-    #         nevents.append(eventfiles[idx])
 
-    #     eventfiles = nevents
+    for chunk in event_chunks:
 
-    # # If max number of inversion select first X
-    # if maxflag:
-    #     print('Getting max # of events ...')
-    #     eventfiles = eventfiles[:node.max_events]
+        node.add(download_chunk, concurrent=True, chunk=chunk)
 
-    # # print list of events if not longer than 10
-    # if len(eventfiles) < 11:
-    #     for _ev in eventfiles:
-    #         print(_ev)
 
-    # Loop over inversions
-    # for event in eventfiles:
-    #     eventname = cmt3d.CMTSource.from_CMTSOLUTION_file(event).eventname
-    #     out = optimdir(node.inputfile, event, get_dirs_only=True)
-    #     outdir = out[0]
+def download_chunk(node: Node):
 
-    scriptdir = "/ccs/home/lsawade/gcmt/cmt3d/scripts"
-    datadir = os.path.join(scriptdir, 'data')
-    subsetdir = os.path.join(datadir, 'subsets')
-    eventdir = os.path.join(datadir, 'events')
-    cmtfilename = os.path.join(eventdir, 'C201009071613A')
+    for eventfilename in node.chunk:
 
-    eventname = os.path.basename(cmtfilename)
-    out = ioi.optimdir(node.inputfile, cmtfilename, get_dirs_only=True)
-    outdir = out[0]
+        eventname = os.path.basename(eventfilename)
 
-    node.add(cmtinversion, concurrent=False, name=eventname,
-             eventname=eventname,
-             outdir=outdir,
-             eventfile=cmtfilename,
-             subsetdir=subsetdir,
-             log=os.path.join(outdir, 'logs'))
+        # Get the database directory
+        out = ioi.optimdir(node.inputfile, eventfilename, get_dirs_only=True)
+
+        node.add(download, name=eventname,
+                 eventname=eventname,
+                 outdir=out[0],
+                 eventfile=eventfilename,
+                 log=os.path.join(out[0], 'logs'))
+
 # -----------------------------------------------------------------------------
-
-
-# ---------------------------- CMTINVERSION -----------------------------------
-
-# Performs inversion for a single event
-def cmtinversion(node: Node):
-    # node.write(20 * "=", mode='a')
-    node.add(download)
-
 
 # Performs iteration
 def download(node: Node):
-
-    node.concurrent = False
 
     try:
         # Will fail if ITER.txt does not exist
@@ -104,5 +71,5 @@ def download(node: Node):
         node.add(ioi.create_forward_dirs, args=(node.eventfile, node.inputfile),
                  name=f"create-dir", cwd=node.log)
 
-        # Get data
-        node.add(ioi.get_data, args=(node.outdir,))
+    # Get data
+    node.add_mpi(ioi.get_data, args=(node.outdir,), cwd=node.log)

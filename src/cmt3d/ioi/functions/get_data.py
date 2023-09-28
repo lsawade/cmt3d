@@ -5,7 +5,7 @@ import cmt3d
 from .constants import Constants
 from .log import write_status
 from .utils import downloaddir
-
+import time
 
 def cpdir(src, dst):
     """Copies entire directory from src to dst
@@ -60,20 +60,32 @@ def get_data(outdir: str):
     # WRITESTATUS
     write_status(downdir, "DOWNLOADING")
 
-    # Redirect logger to file
-    cmt3d.download_waveforms_to_storage(
-        downdir, starttime=starttime, endtime=endtime,
-        waveform_storage=waveformdir, station_storage=stationdir,
-        logfile=os.path.join(downdir, 'download-log.txt'),
-        download_chunk_size_in_mb=100, threads_per_client=1,
-        **download_dict)
+    # N tries
+    Ntry = 10
+    for i in range(Ntry):
+        try:
+            # Redirect logger to file
+            cmt3d.download_waveforms_to_storage(
+                downdir, starttime=starttime, endtime=endtime,
+                waveform_storage=waveformdir, station_storage=stationdir,
+                logfile=os.path.join(downdir, 'download-log.txt'),
+                download_chunk_size_in_mb=100, threads_per_client=1,
+                **download_dict)
 
-    # Check whether download can be called successful
-    if (len(os.listdir(waveformdir)) <= 30) \
-            or (len(os.listdir(stationdir)) <= 10):
-        write_status(outdir, "FAILED")
-    else:
-        write_status(outdir, "DOWNLOADED")
+            # Check whether download can be called successful
+            if (len(os.listdir(waveformdir)) <= 30) \
+                    or (len(os.listdir(stationdir)) <= 10):
+                write_status(outdir, "FAILED")
+            else:
+                write_status(outdir, "DOWNLOADED")
+
+        except Exception as e:
+            print(f'Retry caught exception try {i+1}/{Ntry}')
+            print(e)
+            time.sleep(10)
+            continue
+        else:
+            break
 
     return None
 

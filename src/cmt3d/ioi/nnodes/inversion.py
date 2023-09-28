@@ -10,88 +10,99 @@ import cmt3d.ioi as ioi
 # Loops over events: TODO smarter event check
 def main(node: Node):
 
-    node.concurrent = True
+    print('Hello')
+    node.concurrent = False
 
-    # # Events to be inverted
-    # print('Checking events TODO ...')
-    # eventfiles = check_events_todo(node.inputfile)
+    # Get input file
+    inputparams = cmt3d.read_yaml(node.inputfile)
 
-    # # Specific event id(s)
-    # eventflag = True if node.eventid is not None else False
-    # print('Specfic event(s)?', eventflag)
+    # Get todo events
+    event_dir = inputparams['events']
 
-    # # Maximum inversion flag
-    # maxflag = True if node.max_events != 0 else False
-    # print('Maximum # of events?', maxflag)
+    # Get all events
+    events = [os.path.join(event_dir, ev_file)
+              for ev_file in os.listdir(event_dir)]
 
-    # # If eventid in files only use the ids
-    # if eventflag:
-    #     print('Getting specific events...')
-    #     nevents = []
+    # Sort the events
+    events.sort()
 
-    #     eventnames = [
-    #         cmt3d.CMTSource.from_CMTSOLUTION_file(_file).eventname
-    #         for _file in eventfiles]
+    # Filter by end index
+    if node.end_index:
+        events = events[:node.end_index]
 
-    #     # Check whether multiple eventids are requested
-    #     if isinstance(node.eventid, list):
-    #         eventids = node.eventid
-    #     else:
-    #         eventids = [node.eventid]
+    # Filter by start index
+    if node.start_index:
+        events = events[node.start_index:]
 
-    #     # If id in eventnames, add the eventfile
-    #     for _id in eventids:
-    #         idx = eventnames.index(_id)
-    #         nevents.append(eventfiles[idx])
+    # # Filter by checking which events are done.
+    # if not node.redo:
 
-    #     eventfiles = nevents
+    #     # get out dirs
+    #     new_events = []
 
-    # # If max number of inversion select first X
-    # if maxflag:
-    #     print('Getting max # of events ...')
-    #     eventfiles = eventfiles[:node.max_events]
+    #     for _event in events:
 
-    # # print list of events if not longer than 10
-    # if len(eventfiles) < 11:
-    #     for _ev in eventfiles:
-    #         print(_ev)
+    #         # Get name
+    #         _eventname = os.path.basename(_event)
 
-    # Loop over inversions
-    # for event in eventfiles:
-    #     eventname = cmt3d.CMTSource.from_CMTSOLUTION_file(event).eventname
-    #     out = optimdir(node.inputfile, event, get_dirs_only=True)
-    #     outdir = out[0]
+    #         try:
+    #             # Get inversion directory
+    #             out = ioi.optimdir(node.inputfile, _event, get_dirs_only=True)
+    #             outdir = out[0]
 
-    scriptdir = "/ccs/home/lsawade/gcmt/cmt3d/scripts"
-    datadir = os.path.join(scriptdir, 'data')
-    subsetdir = os.path.join(datadir, 'subsets')
-    eventdir = os.path.join(datadir, 'events')
-    cmtfilename = os.path.join(eventdir, 'C201009071613A')
+    #             # Check status
+    #             status = ioi.read_status(outdir)
 
-    eventname = os.path.basename(cmtfilename)
-    out = ioi.optimdir(node.inputfile, cmtfilename, get_dirs_only=True)
-    outdir = out[0]
+    #             # If events
+    #             if 'FINISHED' not in status:
+    #                 ioi.reset_iter(outdir)
+    #                 ioi.reset_step(outdir)
 
-    if os.path.exists(outdir):
+    #             new_events.append(_event)
 
-        node.rm(outdir)
-        # ioi.reset_iter(outdir)
-        # ioi.reset_step(outdir)
+    #         except FileNotFoundError:
+    #             print(f"No inversion directory for {_eventname}")
 
-    node.add(cmtinversion, concurrent=False, name=eventname,
-             eventname=eventname,
-             outdir=outdir,
-             eventfile=cmtfilename,
-             subsetdir=subsetdir,
-             log=os.path.join(outdir, 'logs'))
+    #     # Replace original list of events
+    #     events = new_events
+
+    # The massdownloader suggest only 4 threads at a time. So here
+    # we are doing 4 simultaneous events with each 1 thread
+    if hasattr(node, 'max_conc'):
+        event_chunks = cmt3d.chunkfunc(events, node.max_conc)
+    else:
+        event_chunks = [events,]
+
+    # Check if done
+    for _i, chunk in enumerate(event_chunks):
+        # print(_i, [os.path.basename(_ev) for _ev in chunk])
+        node.add(invert_chunk, chunk=chunk)
+
 # -----------------------------------------------------------------------------
 
+def invert_chunk(node: Node):
+
+    # Each chunk should run concurrently
+    node.concurrent = True
+
+    for _event in node.chunk:
+
+        eventname = os.path.basename(_event)
+        out = ioi.optimdir(node.inputfile, _event, get_dirs_only=True)
+        outdir = out[0]
+
+        node.add(cmtinversion, name=eventname,
+             eventname=eventname,
+             outdir=outdir,
+             eventfile=_event,
+             log=os.path.join(outdir, 'logs'))
 
 # ---------------------------- CMTINVERSION -----------------------------------
 
 # Performs inversion for a single event
 def cmtinversion(node: Node):
     # node.write(20 * "=", mode='a')
+    concurrent=False
     node.add(iteration)
 
 
@@ -104,16 +115,19 @@ def iteration(node: Node):
         # Will fail if ITER.txt does not exist
         firstiterflag = ioi.get_iter(node.outdir) == 0
 
+        # Will fail if no status message is present
+        status = ioi.read_status(node.outdir)
+
     except Exception:
         firstiterflag = True
+        status = 'NEW'
 
-    if firstiterflag:
+    if firstiterflag or node.redo or 'FAIL' in status:
 
         # Create the inversion directory/makesure all things are in place
         node.add(ioi.create_forward_dirs, args=(node.eventfile, node.inputfile),
                  name=f"create-dir", cwd=node.log)
 
-        # Load GF
         # Load Green function
         node.add(get_subset)
 
@@ -129,11 +143,15 @@ def iteration(node: Node):
 
         # Windowing
         node.add(window, name='window')
+
         # Weighting
         node.add(ioi.compute_weights, args=(node.outdir,))
 
         # Cost, Grad, Hess
         node.add(compute_cgh)
+
+    if 'FINISHED' in status:
+        return
 
     # Get descent direction
     node.add(compute_descent)
@@ -146,7 +164,6 @@ def iteration(node: Node):
 
     # Checks whether to add another iteration
     node.add(iteration_check)
-
 
 
 # Performs linesearch
@@ -203,7 +220,7 @@ def frechet(node: Node):
 def get_subset(node: Node):
     inputparams = cmt3d.read_yaml(os.path.join(node.outdir, 'input.yml'))
 
-    backend = inputparams['backend']
+    backend = node.backend
 
     if backend == 'mpi' and True:
         node.add(get_subset_mpi)
@@ -283,9 +300,8 @@ def process_data(node: Node):
     node.concurrent = True
 
     # Get processing parameters
-    inputparams = cmt3d.read_yaml(os.path.join(node.outdir, 'input.yml'))
-    multiprocesses = inputparams['multiprocesses']
-    backend = inputparams['backend']
+    nproc = node.process_nproc
+    backend = node.backend
 
     # Get parameters
     processdict = cmt3d.read_yaml(os.path.join(node.outdir, 'process.yml'))
@@ -295,14 +311,14 @@ def process_data(node: Node):
         if backend == 'multiprocessing':
             node.add_mpi(
                 ioi.process_data_wave, args=(node.outdir, wavetype),
-                nprocs=1, cpus_per_proc=multiprocesses,
+                nprocs=1, cpus_per_proc=nproc,
                 name=f'process_data_{wavetype}', cwd=node.log)
 
         elif backend == 'mpi':
 
             node.add_mpi(
                 ioi.process_data_wave_mpi, args=(node.outdir, wavetype, True),
-                nprocs=3,
+                nprocs=nproc,
                 name=f'process_data_{wavetype}_mpi', cwd=node.log)
 
         else:
@@ -314,26 +330,26 @@ def process_synthetics(node: Node):
     node.concurrent = True
 
     # Get processing parameters
-    inputparams = cmt3d.read_yaml(os.path.join(node.outdir, 'input.yml'))
-    multiprocesses = inputparams['multiprocesses']
-    backend = inputparams['backend']
+    nproc = node.process_nproc
+    backend = node.backend
 
     # Get parameters
     processdict = cmt3d.read_yaml(os.path.join(node.outdir, 'process.yml'))
 
     for wavetype in processdict.keys():
 
-        if multiprocesses == 1 or backend == 'multiprocessing':
+        if nproc == 1 or backend == 'multiprocessing':
             # Process the normal synthetics
             node.add_mpi(
                 ioi.process_synt_wave, args=(node.outdir, wavetype),
-                nprocs=1, cpus_per_proc=multiprocesses,
+                nprocs=1, cpus_per_proc=nproc,
                 name=f'process_synt_{wavetype}',
                 cwd=node.log)
-        elif multiprocesses > 1 and backend == 'mpi':
+
+        elif nproc > 1 and backend == 'mpi':
             node.add_mpi(
                 ioi.process_synt_wave_mpi, args=(node.outdir, wavetype),
-                nprocs=multiprocesses, name=f'process_synt_{wavetype}_mpi',
+                nprocs=nproc, name=f'process_synt_{wavetype}_mpi',
                 cwd=node.log)
         else:
             raise ValueError('Double check your backend/multiprocessing setup')
@@ -345,9 +361,8 @@ def process_dsdm(node: Node):
     node.concurrent = True
 
     # Get processing parameters
-    inputparams = cmt3d.read_yaml(os.path.join(node.outdir, 'input.yml'))
-    multiprocesses = inputparams['multiprocesses']
-    backend = inputparams['backend']
+    nproc = node.process_nproc
+    backend = node.backend
 
     # Get parameters
     processdict = cmt3d.read_yaml(os.path.join(node.outdir, 'process.yml'))
@@ -360,18 +375,18 @@ def process_dsdm(node: Node):
 
         for _i in range(NM):
 
-            if multiprocesses == 1 or backend == 'multiprocessing':
+            if nproc == 1 or backend == 'multiprocessing':
                 node.add_mpi(
                     ioi.process_dsdm_wave, args=(node.outdir, _i, wavetype, True),
-                    nprocs=1, cpus_per_proc=multiprocesses,
+                    nprocs=1, cpus_per_proc=nproc,
                     name=f'process_dsdm{_i:05d}_{wavetype}',
                     cwd=node.log)
 
-            elif multiprocesses > 1 and backend == 'mpi':
+            elif nproc > 1 and backend == 'mpi':
                 node.add_mpi(
                     ioi.process_dsdm_wave_mpi, args=(
                         node.outdir, _i, wavetype, True),
-                    nprocs=1, cpus_per_proc=multiprocesses,
+                    nprocs=1, cpus_per_proc=nproc,
                     name=f'process_dsdm{_i:05d}_{wavetype}_mpi',
                     cwd=node.log)
 
@@ -385,9 +400,8 @@ def window(node: Node):
     node.concurrent = True
 
     # Get processing parameters
-    inputparams = cmt3d.read_yaml(os.path.join(node.outdir, 'input.yml'))
-    multiprocesses = inputparams['multiprocesses']
-    backend = inputparams['backend']
+    nproc = node.window_nproc
+    backend = node.backend
 
     # Get parameters
     processdict = cmt3d.read_yaml(os.path.join(node.outdir, 'process.yml'))
@@ -397,7 +411,7 @@ def window(node: Node):
         if backend == 'multiprocessing':
             # Process the normal synthetics
             node.add_mpi(ioi.window, args=(node.outdir,),
-                         nprocs=1, cpus_per_proc=multiprocesses*3,
+                         nprocs=1, cpus_per_proc=nproc,
                          name=f'window_{wavetype}',
                          cwd=node.log)
 
@@ -405,7 +419,7 @@ def window(node: Node):
 
             node.add_mpi(
                 ioi.window_wave_mpi, args=(node.outdir, wavetype, True),
-                nprocs=14, name=f'window_{wavetype}_mpi',
+                nprocs=nproc, name=f'window_{wavetype}_mpi',
                 cwd=node.log)
         else:
 
@@ -450,7 +464,7 @@ def compute_cgh(node: Node):
 
 # Cost
 def compute_cost(node: Node):
-    node.add(ioi.cost, args=(node.outdir,), name=f"cost", cwd=node.log)
+    node.add_mpi(ioi.cost, args=(node.outdir,), name=f"cost", cwd=node.log)
 
 
 # Gradient
@@ -490,6 +504,7 @@ def iteration_check(node: Node):
         else:
             node.add(ioi.update_iter, args=(node.outdir,))
             node.add(ioi.reset_step, args=(node.outdir,))
+            node.rm(os.path.join(node.outdir, 'meta', 'subset.h5'))
 
 def search_check(node: Node):
     # Check linesearch result.
