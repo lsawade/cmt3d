@@ -705,12 +705,12 @@ def create_gfm(outdir, dbname: str, local: bool = True):
                         cmt.depth_in_m/1000.0, radius_in_km=50.0, NGLL=5,
                         fortran=False)
 
-    if os.path.exists(loaded_pickle) is False:
+    # if os.path.exists(loaded_pickle) is False:
 
-        from gf3d.seismograms import GFManager
-        print('--> loading gfm')
-        gfm = GFManager(subsetfilename)
-        gfm.load()
-        print('-->loaded  gfm')
+    #     from gf3d.seismograms import GFManager
+    #     print('--> loading gfm')
+    #     gfm = GFManager(subsetfilename)
+    #     gfm.load()
+    #     print('-->loaded  gfm')
 
-        cmt3d.write_pickle(loaded_pickle, gfm)
+    #     cmt3d.write_pickle(loaded_pickle, gfm)

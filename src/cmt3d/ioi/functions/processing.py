@@ -16,16 +16,16 @@ from .log import get_iter, get_step
 from .utils import reset_cpu_affinity, isipython
 
 
-def process_data(outdir):
+def process_data(outdir, multiprocesses=1):
 
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     for wavetype in processdict.keys():
-        process_data_wave(outdir, wavetype)
+        process_data_wave(outdir, wavetype, multiprocesses=multiprocesses)
 
 
-def process_data_wave(outdir, wavetype):
+def process_data_wave(outdir, wavetype, multiprocesses=1):
 
     # Reset CPU affinity important for SUMMIT
     reset_cpu_affinity()
@@ -51,9 +51,6 @@ def process_data_wave(outdir, wavetype):
 
     # Get datadir in data database
     ddatadir = os.path.join(datadatabase, eventname)
-
-    # Read number of processes from input params
-    multiprocesses = inputparams['multiprocesses']
 
     # Read data
     data = obspy.read(os.path.join(ddatadir, 'waveforms', '*.mseed'))
@@ -184,22 +181,17 @@ def process_data_wave_mpi(outdir, wavetype, verbose=True):
         write_data(pdata, outdir, wavetype)
 
 
-def process_synt(outdir, verbose=True):
+def process_synt(outdir, multiprocesses=1, verbose=True):
 
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     for wavetype in processdict.keys():
-        process_synt_wave(outdir, wavetype, verbose=verbose)
+        process_synt_wave(outdir, wavetype, multiprocesses=multiprocesses,
+                          verbose=verbose)
 
 
-def process_synt_wave(outdir, wavetype, verbose=True):
-
-    # Get parameters
-    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
-
-    # Read number of processes from input params
-    multiprocesses = inputparams['multiprocesses']
+def process_synt_wave(outdir, wavetype, multiprocesses=1, verbose=True):
 
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
@@ -304,9 +296,6 @@ def process_synt_wave_mpi(outdir, wavetype, verbose=True):
         # Get processing parameters
         processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
-        # Reset CPU affinity important for SUMMIT
-        reset_cpu_affinity(verbose=True)
-
         # Get iter,step
         it = get_iter(outdir)
         ls = get_step(outdir)
@@ -379,16 +368,17 @@ def process_synt_wave_mpi(outdir, wavetype, verbose=True):
         write_synt(pdata, outdir, wavetype, it, ls)
 
 
-def process_dsdm(outdir, nm, verbose=False):
+def process_dsdm(outdir, nm, multiprocesses=1, verbose=False):
 
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     for wavetype in processdict.keys():
-        process_dsdm_wave(outdir, nm, wavetype, verbose=verbose)
+        process_dsdm_wave(outdir, nm, wavetype, multiprocesses=multiprocesses,
+                          verbose=verbose)
 
 
-def process_dsdm_wave(outdir, nm, wavetype, verbose=True):
+def process_dsdm_wave(outdir, nm, wavetype, multiprocesses=1, verbose=True):
 
 
     # Reset CPU affinity important for SUMMIT
@@ -411,12 +401,6 @@ def process_dsdm_wave(outdir, nm, wavetype, verbose=True):
 
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
-
-    # Get parameters
-    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
-
-    # Read number of processes from input params
-    multiprocesses = inputparams['multiprocesses']
 
     # Read data
     if mname in Constants.nosimpars:
@@ -608,16 +592,17 @@ def merge_windows(data_stream: obspy.Stream, synt_stream: obspy.Stream):
                 obs_tr, synt_tr)
 
 
-def window(outdir, verbose=True):
+def window(outdir, multiprocesses=1, verbose=True):
 
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     for wavetype in processdict.keys():
-        window_wave(outdir, wavetype, verbose=verbose)
+        window_wave(outdir, wavetype, multiprocesses=multiprocesses,
+                    verbose=verbose)
 
 
-def window_wave(outdir, wavetype, verbose=True):
+def window_wave(outdir, wavetype, multiprocesses=1, verbose=True):
 
     # Reset CPU affinity important for SUMMIT
     reset_cpu_affinity()
@@ -627,12 +612,6 @@ def window_wave(outdir, wavetype, verbose=True):
 
     # Get process parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
-
-    # Get input parameters
-    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
-
-    # Read number of processes from input params
-    multiprocesses = inputparams['multiprocesses']
 
     # Read stations
     stations = cmt3d.read_inventory(os.path.join(metadir, 'stations.xml'))
@@ -720,12 +699,6 @@ def window_wave_mpi(outdir, wavetype, verbose=True):
 
         # Get process parameters
         processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
-
-        # Get input parameters
-        inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
-
-        # Read number of processes from input params
-        multiprocesses = inputparams['multiprocesses']
 
         # Read stations
         stations = cmt3d.read_inventory(os.path.join(metadir, 'stations.xml'))

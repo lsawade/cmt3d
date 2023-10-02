@@ -2,7 +2,7 @@ from .functions.constants import Constants
 from .functions.cost import cost, read_cost, write_cost, read_cost_all
 from .functions.data import write_data, write_data_windowed, read_data, \
     read_data_windowed
-from .functions.descent import descent
+from .functions.descent import descent, read_descent, write_descent
 from .functions.forward import forward, read_synt, write_synt, read_synt_raw, \
     write_synt_raw, read_synt_all
 from .functions.get_data import get_data
@@ -76,4 +76,5 @@ __all__ = [
     "window_wave", "window_wave_mpi",
     "process_data_wave", "process_data_wave_mpi",
     "forward_kernel",
+    "read_descent", "write_descent"
 ]

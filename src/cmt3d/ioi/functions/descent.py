@@ -46,34 +46,30 @@ def zero_trace_gH(m, g, H, outdir):
     return g, H
 
 
-def write_descent(dm, outdir, it, ls=None):
+def write_descent(dm, outdir, it, ls=0):
 
     # Get graddir
     descdir = os.path.join(outdir, 'desc')
 
     # Get filename
-    if ls is not None:
-        fname = f"dm_it{it:05d}_ls{ls:05d}.npy"
-    else:
-        fname = f"dm_it{it:05d}.npy"
+    fname = f"dm_it{it:05d}_ls{ls:05d}.npy"
 
-    # Full filename
+    # Full path
     file = os.path.join(descdir, fname)
 
     # Save
     np.save(file, dm)
 
 
-def read_descent(outdir, it, ls=None):
+def read_descent(outdir, it, ls=0):
 
     # Get graddir
     descdir = os.path.join(outdir, 'desc')
 
-    if ls is not None:
-        fname = f"dm_it{it:05d}_ls{ls:05d}.npy"
-    else:
-        fname = f"dm_it{it:05d}.npy"
+    # Filename
+    fname = f"dm_it{it:05d}_ls{ls:05d}.npy"
 
+    # Path
     file = os.path.join(descdir, fname)
 
     return np.load(file)
@@ -89,7 +85,7 @@ def descent(outdir):
     metadir = os.path.join(outdir, 'meta')
 
     # Get damping value
-    inputparams = cmt3d.read_yaml_file(os.path.join(outdir, 'input.yml'))
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
 
     # Get damping value
     damping = inputparams['optimization']['damping']

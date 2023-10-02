@@ -26,6 +26,7 @@ keywords = [
 ]
 dependencies = [
     "click",
+    "dill",
     "obspy",
     "matplotlib",
     "numpy",

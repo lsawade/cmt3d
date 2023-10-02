@@ -1,4 +1,5 @@
-#%%
+# %%
+import obsplotlib.plot as opl
 import os
 from collections import OrderedDict
 import numpy as np
@@ -7,18 +8,39 @@ import matplotlib.pyplot as plt
 from cmt3d.viz.plot_inversion_section import plot_inversion_section
 
 # %%
-outdir = "/Users/lucassawade/database/nnodes/C201009071613A/"
+outdir = "/gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes/B010495E"
 
 # %%
-plot_inversion_section(outdir, 'body', windows=False,
-                       component='Z')
+plt.close('all')
+wave = "mantle"
+component = "Z"
+plot_inversion_section(outdir, wave, windows=False,
+                       component=component)
+
+plt.savefig(f"section_{wave}_{component}.png", dpi=300)
+
+# %%
+# Plotting the frechet derivatives for a specific station
+model_names = ioi.read_model_names(outdir)
+
+# Selected station
+network, station, component = "IU", "ANMO", "Z"
+fdict = dict()
+
+wave = "body"
+for _i, _mname in enumerate(model_names):
+    fdict[_mname] = ioi.read_dsdm(outdir, wave, _i, 0, 0)
 
 
+synt = ioi.read_synt(outdir, wave, 0, 0)
 
+# %%
+opl.frechet(synt, fdict, network, station, component)
+plt.savefig(f"frechet_{network}_{station}_{component}_{wave}.png", dpi=300)
 # %%
 cmts = ioi.get_cmt_all(outdir)
 print((cmts[-1].M0-cmts[0].M0)/cmts[0].M0)
-print(cmts[-1] -cmts[0])
+print(cmts[-1] - cmts[0])
 
 
 # %%
@@ -70,12 +92,11 @@ def read_all_cost(outdir, linesearches: bool = True):
     return costs
 
 
-
 def plot_cm(cmts, costs, mpar='depth_in_m'):
 
     ax = plt.gca()
 
-    colors = ['k', 'r', 'b', 'g',]
+    colors = ['k', 'r', 'b', 'g', ]
     for (it, _lscmts), (_, _lscosts) in zip(cmts.items(), costs.items()):
 
         m = []
@@ -92,5 +113,3 @@ def plot_cm(cmts, costs, mpar='depth_in_m'):
 cmts = read_all_cmt(outdir)
 costs = read_all_cost(outdir)
 plot_cm(cmts, costs, mpar='depth_in_m')
-
-

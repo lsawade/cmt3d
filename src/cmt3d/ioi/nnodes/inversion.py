@@ -68,7 +68,7 @@ def main(node: Node):
 
     # The massdownloader suggest only 4 threads at a time. So here
     # we are doing 4 simultaneous events with each 1 thread
-    if hasattr(node, 'max_conc'):
+    if node.max_conc is not None:
         event_chunks = cmt3d.chunkfunc(events, node.max_conc)
     else:
         event_chunks = [events,]
@@ -229,7 +229,7 @@ def get_subset(node: Node):
 
 
 def get_subset_mpi(node: Node):
-    node.add_mpi(ioi.create_gfm, nprocs=1, cpus_per_proc=36,
+    node.add_mpi(ioi.create_gfm, nprocs=1, cpus_per_proc=20,
                  args=(node.outdir, node.dbname, node.db_is_local),
                  name='Create_GFM', cwd=node.log)
 
@@ -269,12 +269,12 @@ def get_subset_local(node: Node):
 
         else:
 
-
             from gf3d.client import GF3DClient
             gfc = GF3DClient(db=node.dbname)
             cmt = ioi.get_cmt(node.outdir, 0, 0)
-            gfc.get_subset(subsetfilename, NGLL=5,
-                        fortran=False)
+            gfc.get_subset(subsetfilename, cmt.latitude, cmt.longitude,
+                           cmt.depth_in_m/1000.0, dist_in_km=50.0, NGLL=5,
+                           fortran=False)
 
     print('loading gfm')
     GFM_CACHE[node.eventname] = GFManager(subsetfilename)
@@ -310,7 +310,7 @@ def process_data(node: Node):
 
         if backend == 'multiprocessing':
             node.add_mpi(
-                ioi.process_data_wave, args=(node.outdir, wavetype),
+                ioi.process_data_wave, args=(node.outdir, wavetype, nproc),
                 nprocs=1, cpus_per_proc=nproc,
                 name=f'process_data_{wavetype}', cwd=node.log)
 
@@ -341,7 +341,7 @@ def process_synthetics(node: Node):
         if nproc == 1 or backend == 'multiprocessing':
             # Process the normal synthetics
             node.add_mpi(
-                ioi.process_synt_wave, args=(node.outdir, wavetype),
+                ioi.process_synt_wave, args=(node.outdir, wavetype, nproc),
                 nprocs=1, cpus_per_proc=nproc,
                 name=f'process_synt_{wavetype}',
                 cwd=node.log)
