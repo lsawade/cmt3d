@@ -12,7 +12,6 @@ from .model import read_model_names, read_scaling, write_model, \
 from .log import reset_iter, reset_step, write_status
 
 
-
 def createdir(cdir):
     """"Creates directory tree of specified path if it doesn't exist yet
 
@@ -664,11 +663,9 @@ def create_gfm(outdir, dbname: str, local: bool = True):
     # Hello
     if os.path.exists(subsetfilename) is False:
 
-
         # Read original CMT solution
         cmt = cmt3d.CMTSource.from_CMTSOLUTION_file(
             os.path.join(outdir, 'meta', 'init_model.cmt'))
-
 
         if local:
 
@@ -684,16 +681,16 @@ def create_gfm(outdir, dbname: str, local: bool = True):
             # Check if there are any files
             if len(db_files) == 0:
                 raise ValueError(f'No files found in {dbname} directory. '
-                                'Please check path.')
+                                 'Please check path.')
 
             else:
                 # Get subset
                 GFM = GFManager(db_files)
                 GFM.load_header_variables()
                 GFM.write_subset_directIO(subsetfilename,
-                    cmt.latitude, cmt.longitude, cmt.depth_in_m/1000.0,
-                    dist_in_km=75.0, NGLL=5,
-                    fortran=False)
+                                          cmt.latitude, cmt.longitude, cmt.depth_in_m/1000.0,
+                                          dist_in_km=75.0, NGLL=5,
+                                          fortran=False)
 
         else:
 
@@ -702,8 +699,8 @@ def create_gfm(outdir, dbname: str, local: bool = True):
 
             # Get subset
             gfc.get_subset(subsetfilename, cmt.latitude, cmt.longitude,
-                        cmt.depth_in_m/1000.0, radius_in_km=50.0, NGLL=5,
-                        fortran=False)
+                           cmt.depth_in_m/1000.0, radius_in_km=50.0, NGLL=5,
+                           fortran=False)
 
     # if os.path.exists(loaded_pickle) is False:
 

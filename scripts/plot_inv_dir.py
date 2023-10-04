@@ -1,23 +1,30 @@
 # %%
 import obsplotlib.plot as opl
 import os
+import obspy
 from collections import OrderedDict
 import numpy as np
+import cmt3d
 import cmt3d.ioi as ioi
 import matplotlib.pyplot as plt
 from cmt3d.viz.plot_inversion_section import plot_inversion_section
 
 # %%
+
 outdir = "/gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes/B010495E"
+
 
 # %%
 plt.close('all')
-wave = "mantle"
+wave = "body"
 component = "Z"
 plot_inversion_section(outdir, wave, windows=False,
                        component=component)
+plt.savefig(f"section_{wave}_{component}.pdf", dpi=300)
 
-plt.savefig(f"section_{wave}_{component}.png", dpi=300)
+# %% get stuff from directory
+cmt = ioi.get_cmt(outdir, 0)
+
 
 # %%
 # Plotting the frechet derivatives for a specific station
@@ -96,14 +103,21 @@ def plot_cm(cmts, costs, mpar='depth_in_m'):
 
     ax = plt.gca()
 
-    colors = ['k', 'r', 'b', 'g', ]
+    # Get colors from rainbow
+    cmap = plt.get_cmap('rainbow')
+    colors = cmap(np.linspace(0, 1, len(cmts), endpoint=True))
+
     for (it, _lscmts), (_, _lscosts) in zip(cmts.items(), costs.items()):
 
         m = []
         c = []
-        for (ls, _cmt), (_, _cost) in zip(_lscmts.items(), _lscosts.items()):
-            m.append(getattr(_cmt, mpar))
+        iit = np.linspace(0, 1, len(_lscmts), endpoint=True)
+        for _i, ((ls, _cmt), (_, _cost)) in enumerate(zip(_lscmts.items(), _lscosts.items())):
             c.append(_cost)
+            if mpar == 'iteration':
+                m.append(it + iit[_i])
+            else:
+                m.append(getattr(_cmt, mpar))
 
         plt.plot(m, c, 'o-', c=colors[it], label=f"{it}")
         plt.show(block=False)
@@ -112,4 +126,8 @@ def plot_cm(cmts, costs, mpar='depth_in_m'):
 # %%
 cmts = read_all_cmt(outdir)
 costs = read_all_cost(outdir)
-plot_cm(cmts, costs, mpar='depth_in_m')
+plt.close('all')
+plt.figure()
+plot_cm(cmts, costs, mpar='iteration')
+
+plt.savefig(f"costs_including_ls.png", dpi=300)

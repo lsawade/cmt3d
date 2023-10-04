@@ -11,8 +11,8 @@ from .constants import Constants
 from .model import read_model_names, read_perturbation
 from .kernel import write_dsdm, read_dsdm_raw
 from .forward import write_synt, read_synt, read_synt_raw
-from .data import write_data, read_data, write_data_windowed
-from .log import get_iter, get_step
+from .data import write_data, read_data, write_data_windowed, read_data_windowed
+from .log import get_iter, get_step, write_log, write_status
 from .utils import reset_cpu_affinity, isipython
 
 
@@ -160,7 +160,6 @@ def process_data_wave_mpi(outdir, wavetype, verbose=True):
         data = None
         tprocessdict = None
 
-
     if verbose and rank == 0:
         print("-> Setting OMP threads to 1")
 
@@ -260,7 +259,7 @@ def process_synt_wave(outdir, wavetype, multiprocesses=1, verbose=True):
         # Verbose output
         if verbose:
             print(f"    ... in parallel using {multiprocesses} cores."
-                    "and multiprocessing.")
+                  "and multiprocessing.")
         # This is sooo important for parallel processing
         # If you don't set this numpy, mkl, etc. will try to use threads
         # for processing, but you do not want that, because you want to
@@ -275,8 +274,7 @@ def process_synt_wave(outdir, wavetype, multiprocesses=1, verbose=True):
         # Verbose output
         if verbose:
             print(f"    ... in parallel using {multiprocesses} cores."
-                    "and mpi.")
-
+                  "and mpi.")
 
     # Write synthetics
     write_synt(pdata, outdir, wavetype, it, ls)
@@ -379,7 +377,6 @@ def process_dsdm(outdir, nm, multiprocesses=1, verbose=False):
 
 
 def process_dsdm_wave(outdir, nm, wavetype, multiprocesses=1, verbose=True):
-
 
     # Reset CPU affinity important for SUMMIT
     reset_cpu_affinity(verbose=verbose)
@@ -563,7 +560,6 @@ def process_dsdm_wave_mpi(outdir, nm, wavetype, verbose=True):
         write_dsdm(pdata, outdir, wavetype, nm, it, ls)
 
 
-
 def wprocess_dsdm(args):
     process_dsdm(*args)
 
@@ -693,7 +689,6 @@ def window_wave_mpi(outdir, wavetype, verbose=True):
             print(f"Processing {wavetype}")
             print("-> Loading parameters")
 
-
         # Get dirs
         metadir = os.path.join(outdir, 'meta')
 
@@ -772,6 +767,37 @@ def wwindow(args):
     window(*args)
 
 
+def check_window_count(outdir: str):
+
+    # Get processing parameters
+    processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
+
+    win_dict = dict()
+
+    # Loop over wavetypes
+    for wavetype in processdict.keys():
+        data = read_data_windowed(outdir, wavetype)
+
+        win_dict[wavetype] = 0
+        for tr in data:
+            if hasattr(tr.stats, "windows"):
+                win_dict[wavetype] += len(tr.stats.windows)
+
+    if sum([value for value in win_dict.values()]) < 50:
+        write_status(outdir, "FAIL: Total number of windows less than 50.")
+    else:
+        write_status(outdir, "INVERT: Total number of windows more than 50.")
+
+    # Write window dictionary to log
+    message = "Windows:\n"
+    message += "--------\n"
+    for key, val in win_dict.items():
+        key += ":"
+        message += f"{key:<8} {val:d}\n"
+
+    write_log(outdir, message)
+
+
 def bin():
 
     from sys import argv
@@ -783,3 +809,6 @@ def bin():
 
 if __name__ == "__main__":
     bin()
+
+# %%
+""

@@ -8,6 +8,8 @@ import cmt3d.ioi as ioi
 
 # ----------------------------- MAIN NODE -------------------------------------
 # Loops over events: TODO smarter event check
+
+
 def main(node: Node):
 
     print('Hello')
@@ -71,14 +73,16 @@ def main(node: Node):
     if node.max_conc is not None:
         event_chunks = cmt3d.chunkfunc(events, node.max_conc)
     else:
-        event_chunks = [events,]
+        event_chunks = [events, ]
 
     # Check if done
     for _i, chunk in enumerate(event_chunks):
         # print(_i, [os.path.basename(_ev) for _ev in chunk])
-        node.add(invert_chunk, chunk=chunk)
+        node.add(invert_chunk, chunk=chunk, name=",".join(
+            os.path.basename(_ev) for _ev in chunk))
 
 # -----------------------------------------------------------------------------
+
 
 def invert_chunk(node: Node):
 
@@ -92,23 +96,43 @@ def invert_chunk(node: Node):
         outdir = out[0]
 
         node.add(cmtinversion, name=eventname,
-             eventname=eventname,
-             outdir=outdir,
-             eventfile=_event,
-             log=os.path.join(outdir, 'logs'))
+                 eventname=eventname,
+                 outdir=outdir,
+                 eventfile=_event,
+                 log=os.path.join(outdir, 'logs'))
 
 # ---------------------------- CMTINVERSION -----------------------------------
 
 # Performs inversion for a single event
+
+
 def cmtinversion(node: Node):
     # node.write(20 * "=", mode='a')
-    concurrent=False
-    node.add(iteration)
+    concurrent = False
+
+    node.add(preprocess)
+
+    node.add(maybe_invert)
 
 
-# Performs iteration
-def iteration(node: Node):
+def maybe_invert(node: Node):
 
+    status = ioi.read_status(node.outdir)
+
+    if 'FAIL' in status:
+        pass
+    else:
+        # Weighting
+        node.add_mpi(ioi.compute_weights, args=(node.outdir,))
+
+        # Cost, Grad, Hess
+        node.add(compute_cgh)
+
+        # Adding the first iteration!
+        node.add(iteration)
+
+
+def preprocess(node: Node):
     node.concurrent = False
 
     try:
@@ -125,7 +149,8 @@ def iteration(node: Node):
     if firstiterflag or node.redo or 'FAIL' in status:
 
         # Create the inversion directory/makesure all things are in place
-        node.add(ioi.create_forward_dirs, args=(node.eventfile, node.inputfile),
+        node.add(ioi.create_forward_dirs,
+                 args=(node.eventfile, node.inputfile),
                  name=f"create-dir", cwd=node.log)
 
         # Load Green function
@@ -133,7 +158,6 @@ def iteration(node: Node):
 
         # Get data
         # node.add(ioi.get_data, args=(node.outdir,))
-
 
         # Forward and frechet modeling
         node.add(forward_frechet_mpi)
@@ -144,14 +168,14 @@ def iteration(node: Node):
         # Windowing
         node.add(window, name='window')
 
-        # Weighting
-        node.add(ioi.compute_weights, args=(node.outdir,))
+        # Check Window count
+        node.add_mpi(ioi.check_window_count, args=(node.outdir,))
 
-        # Cost, Grad, Hess
-        node.add(compute_cgh)
+    # if 'FINISHED' in status:
+        # Performs iteration
 
-    if 'FINISHED' in status:
-        return
+
+def iteration(node: Node):
 
     # Get descent direction
     node.add(compute_descent)
@@ -188,6 +212,7 @@ def forward_frechet(node: Node):
     node.add(forward)
     node.add(frechet)
 
+
 def forward_frechet_mpi(node: Node):
 
     mnames = ioi.read_model_names(node.outdir)
@@ -210,6 +235,7 @@ def forward_frechet_mpi(node: Node):
 
 def forward(node: Node):
     ioi.forward(node.outdir, GFM_CACHE[node.eventname])
+
 
 def frechet(node: Node):
     ioi.kernel(node.outdir, GFM_CACHE[node.eventname])
@@ -234,9 +260,7 @@ def get_subset_mpi(node: Node):
                  name='Create_GFM', cwd=node.log)
 
 
-
 def get_subset_local(node: Node):
-
 
     subsetfilename = os.path.join(node.outdir, 'meta', "subset.h5")
 
@@ -255,7 +279,7 @@ def get_subset_local(node: Node):
             # Check if there are any files
             if len(db_files) == 0:
                 raise ValueError(f'No files found in {node.dbname} directory. '
-                                'Please check path.')
+                                 'Please check path.')
 
             else:
                 # Get subset
@@ -263,9 +287,9 @@ def get_subset_local(node: Node):
                 GFM.load_header_variables()
                 cmt = ioi.get_cmt(node.outdir, 0, 0)
                 GFM.write_subset_directIO(subsetfilename,
-                    cmt.latitude, cmt.longitude, cmt.depth_in_m/1000.0,
-                    dist_in_km=50.0, NGLL=5,
-                    fortran=False)
+                                          cmt.latitude, cmt.longitude, cmt.depth_in_m/1000.0,
+                                          dist_in_km=50.0, NGLL=5,
+                                          fortran=False)
 
         else:
 
@@ -283,6 +307,8 @@ def get_subset_local(node: Node):
 
 # ----------
 # Processing
+
+
 def process_all(node: Node):
     node.concurrent = True
     node.add(process_data)
@@ -377,7 +403,8 @@ def process_dsdm(node: Node):
 
             if nproc == 1 or backend == 'multiprocessing':
                 node.add_mpi(
-                    ioi.process_dsdm_wave, args=(node.outdir, _i, wavetype, True),
+                    ioi.process_dsdm_wave, args=(
+                        node.outdir, _i, wavetype, True),
                     nprocs=1, cpus_per_proc=nproc,
                     name=f'process_dsdm{_i:05d}_{wavetype}',
                     cwd=node.log)
@@ -391,7 +418,8 @@ def process_dsdm(node: Node):
                     cwd=node.log)
 
             else:
-                raise ValueError('Double check your backend/multiprocessing setup')
+                raise ValueError(
+                    'Double check your backend/multiprocessing setup')
 
 
 # ------------------
@@ -410,7 +438,7 @@ def window(node: Node):
 
         if backend == 'multiprocessing':
             # Process the normal synthetics
-            node.add_mpi(ioi.window, args=(node.outdir,),
+            node.add_mpi(ioi.window_wave, args=(node.outdir, wave, nproc),
                          nprocs=1, cpus_per_proc=nproc,
                          name=f'window_{wavetype}',
                          cwd=node.log)
@@ -424,8 +452,6 @@ def window(node: Node):
         else:
 
             raise ValueError('Double check your backend/multiprocessing setup')
-
-
 
 
 # ------------------
@@ -463,6 +489,8 @@ def compute_cgh(node: Node):
     node.add(compute_hessian)
 
 # Cost
+
+
 def compute_cost(node: Node):
     node.add_mpi(ioi.cost, args=(node.outdir,), name=f"cost", cwd=node.log)
 
@@ -479,10 +507,12 @@ def compute_hessian(node: Node):
 
 # Descent
 def compute_descent(node: Node):
-    node.add_mpi(ioi.descent, args=(node.outdir,), name=f"descent", cwd=node.log)
+    node.add_mpi(ioi.descent, args=(node.outdir,),
+                 name=f"descent", cwd=node.log)
 
 # ----------
 # Linesearch
+
 
 def compute_optvals(node: Node):
     node.add_mpi(ioi.check_optvals, args=(node.outdir,))
@@ -505,6 +535,7 @@ def iteration_check(node: Node):
             node.add(ioi.update_iter, args=(node.outdir,))
             node.add(ioi.reset_step, args=(node.outdir,))
             node.rm(os.path.join(node.outdir, 'meta', 'subset.h5'))
+
 
 def search_check(node: Node):
     # Check linesearch result.

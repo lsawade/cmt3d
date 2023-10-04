@@ -19,7 +19,11 @@ import _pickle
 
 
 def mpiabort_excepthook(type, value, traceback):
-    print(traceback.format_exc(), flush=True)
+
+    if hasattr(traceback, "print_exc"):
+        traceback.print_exc()
+
+    print("", flush=True)
     time.sleep(1.0)
     import mpi4py.MPI
     mpi_comm = mpi4py.MPI.COMM_WORLD
@@ -59,7 +63,7 @@ def forward_kernel(outdir):
 
     if needed_size != size:
         raise ValueError('The number of MPI processes MUST be equal the number'
-                         'of required forward simulations')
+                         f'of required forward simulations. Need: {needed_size}')
 
     # This block is really starting stuff
     if rank == 0:
@@ -175,7 +179,9 @@ def forward_kernel(outdir):
 
     # Scatter the rank map
     rankmap = comm.scatter(rankmap, root=0)
-    cmt = rankmap[0]
+
+    # Make the cmt solutions GF3D obsjects.
+    cmt = cmt3d2gf3d(rankmap[0])
     par = rankmap[1]
     pert = rankmap[2]
     sr_rank = rankmap[3]
@@ -184,19 +190,21 @@ def forward_kernel(outdir):
 
     # Get the seismograms
     MS = MPISubset(os.path.join(outdir, 'meta', 'subset.h5'))
-    drp = MS.get_seismograms(cmt3d2gf3d(cmt))
+    data = MS.get_seismograms(cmt)
+
+    comm.barrier()
 
     if par == 'synt':
         # We can directly write the synthetics
-        write_synt_raw(drp, outdir)
+        write_synt_raw(MS.get_stream(cmt, data), outdir)
 
     elif par == 'time_shift':
 
         # If the parameter is timeshift we need to compute the gradient
         # and the multply by -1
-        drp.differentiate()
-        for tr in drp:
-            tr.data *= -1
+        # Take the gradient
+        data = np.gradient(data, MS.header['dt'], axis=2)
+        drp = MS.get_stream(cmt, data*-1)
 
         # Then we can directly write the perturbed synthetics
         idx = model_names.index(par)
@@ -208,51 +216,30 @@ def forward_kernel(outdir):
         pert = perturbation[idx]
 
         # For the moment tensor elements we only of the traces we only need to
-        for tr in drp:
-            tr.data *= 1/pert
+        drp = MS.get_stream(cmt, data * (1/pert))
 
         write_dsdm_raw(drp, outdir, idx)
 
     else:
-        drp = drp
 
         idx = model_names.index(par)
 
         # Somehow the communication here gets pickling errors.
-        for _i_ in range(5):
-            try:
-                if pert == 1:
-                    print(f"{rank:2d}/{size:2d}:", "Receiving...", flush=True)
-                    neg = comm.recv(source=sr_rank, tag=idx)
-                    print(f"{rank:2d}/{size:2d}:",
-                          "Received:", type(neg), flush=True)
-                elif pert == -1:
-                    print(f"{rank:2d}/{size:2d}:",
-                          "Sending:  ", type(drp), flush=True)
-                    comm.send(drp, dest=sr_rank, tag=idx)
-                    print(f"{rank:2d}/{size:2d}:", "Sent.", flush=True)
-                else:
-                    raise ValueError('Only 1 and -1 can be used for pert since it '
-                                     'indicates sending or receiving streams')
+        if pert == 1:
+            print(f"{rank:2d}/{size:2d}:", "Receiving...", flush=True)
+            neg = np.empty_like(data)
+            comm.Recv(neg, source=sr_rank, tag=idx)
+            print(f"{rank:2d}/{size:2d}:",
+                  "Received:", type(neg), flush=True)
 
-            except _pickle.UnpicklingError as e:
-
-                import traceback
-                traceback.print_exc()
-
-                print(e, flush=True, file=sys.stderr)
-
-                print(rank, size, par, pert, sr_rank,
-                      flush=True, file=sys.stderr)
-
-                time.sleep(1.0)
-
-                if _i_ - 4 >= 0:
-                    comm.Abort()
-                else:
-                    print("First try sending stuff failed, trying again",
-                          _i_ + 1, flush=True)
-                    continue
+        elif pert == -1:
+            print(f"{rank:2d}/{size:2d}:",
+                  "Sending:  ", type(data), flush=True)
+            comm.Send(data, dest=sr_rank, tag=idx)
+            print(f"{rank:2d}/{size:2d}:", "Sent.", flush=True)
+        else:
+            raise ValueError('Only 1 and -1 can be used for pert since it '
+                             'indicates sending or receiving streams')
 
         if pert == 1:
 
@@ -264,10 +251,15 @@ def forward_kernel(outdir):
             else:
                 _pert = perturbation[idx]
 
-            for ptr, mtr in zip(drp, neg):
-                ptr.data -= mtr.data
-                ptr.data /= 2 * _pert
+            # Combine forward and backward perturabtion for CFD
+            data = (data - neg) * (1/(2 * _pert))
 
+            # Write strem to pickle
+            drp = MS.get_stream(cmt, data)
             write_dsdm_raw(drp, outdir, idx)
 
     comm.barrier()
+
+
+if __name__ == "__main__":
+    forward_kernel(sys.argv[1])

@@ -60,6 +60,7 @@ entk = [
 
 [project.scripts]  # Optional
 cmt3d-download-gcmt-catalog = "cmt3d.download_gcmt_catalog:bin"
+cmt3d-ioi = "cmt3d.ioi.cli:cli"
 
 [tool.setuptools]
 # If there are data files included in your packages that need to be

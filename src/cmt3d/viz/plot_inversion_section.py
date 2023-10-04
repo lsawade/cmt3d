@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 from .filter_windows import make_plot_windows
 
+
 def plot_inversion_section(outdir, wtype, windows: bool, component='Z'):
     """
     Plots all steps into a section.
@@ -37,20 +38,30 @@ def plot_inversion_section(outdir, wtype, windows: bool, component='Z'):
     opl.copy_geometry(data, synts)
 
     # Filter windows
-    synt_labels= [f"C: {_c:.4f}" for _c in costs]
+    synt_labels = [f"C: {_c:.4f}" for _c in costs]
     data, synts = make_plot_windows(data, synts, synt_labels)
 
     # Get intersection
     pstreams = opl.select_intersection([data, *synts], components=component)
 
-    # Plot section
-    opl.section(pstreams, labels=["Data", *synt_labels],
-                origin_time=cmt0.origin_time, lw=0.5,
-                comp=component,
-                plot_amplitudes=False,
-                plot_geometry=False,
-                legendargs=dict(loc='lower right', ncol=4, frameon=False,
-                                bbox_to_anchor=(1,1)),
-                window=True)
+    if wtype == 'body':
+        scale = 10.0
+        size = (10, 8)
+    else:
+        scale = 1.0
+        size = (10, 8)
 
+    # Plot section
+    plt.figure(figsize=size)
+    ax, _ = opl.section(pstreams, labels=["Data", *synt_labels],
+                        origin_time=cmt0.origin_time, lw=0.25,
+                        comp=component,
+                        plot_amplitudes=False,
+                        plot_geometry=False,
+                        scale=scale,
+                        legendargs=dict(loc='lower right', ncol=4,
+                                        frameon=False,
+                                        bbox_to_anchor=(1, 1)),
+                        window=True)
+    ax.tick_params(axis='y', labelsize='xx-small')
     plt.show()

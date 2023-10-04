@@ -22,7 +22,7 @@ from .functions.model import read_model, write_model, get_cmt, \
 from .functions.processing import process_data, process_synt, process_dsdm, \
     window, wprocess_dsdm, process_synt_wave, process_synt_wave_mpi, \
     process_dsdm_wave, process_dsdm_wave_mpi, window_wave, window_wave_mpi, \
-    process_data_wave, process_data_wave_mpi
+    process_data_wave, process_data_wave_mpi, check_window_count
 from .functions.utils import optimdir, createdir, rmdir, \
     prepare_inversion_dir, prepare_model, prepare_stations, \
     prepare_simulation_dirs, create_forward_dirs, wcreate_forward_dirs, \
@@ -76,5 +76,6 @@ __all__ = [
     "window_wave", "window_wave_mpi",
     "process_data_wave", "process_data_wave_mpi",
     "forward_kernel",
-    "read_descent", "write_descent"
+    "read_descent", "write_descent",
+    "check_window_count"
 ]
