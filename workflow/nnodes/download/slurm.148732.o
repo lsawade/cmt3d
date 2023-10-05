@@ -1,0 +1,106 @@
+      get_data
+      get_data
+      get_data
+      get_data
+  download_chunk
+    B010200D
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010200D/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010200D/stations/*.xml
+      get_data
+    B010200E
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010200E/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010200E/stations/*.xml
+      get_data
+    B010202D
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010202D/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010202D/stations/*.xml
+      get_data
+    B010395E
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010395E/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010395E/stations/*.xml
+      get_data
+  download_chunk
+    B010398C
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010398C/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010398C/stations/*.xml
+      get_data
+    B010495E
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010495E/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010495E/stations/*.xml
+      get_data
+    B010500I
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010500I/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010500I/stations/*.xml
+      get_data
+    B010500J
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010500J/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010500J/stations/*.xml
+      get_data
+  download_chunk
+    B010595E
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010595E/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010595E/stations/*.xml
+      get_data
+    B010597A
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010597A/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010597A/stations/*.xml
+      get_data
+    B010601B
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010601B/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010601B/stations/*.xml
+      get_data
+    B010601C
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010601C/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010601C/stations/*.xml
+      get_data
+  download_chunk
+    B010602E
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010602E/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010602E/stations/*.xml
+      get_data
+    B010602G
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010602G/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010602G/stations/*.xml
+      get_data
+    B010602I
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010602I/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010602I/stations/*.xml
+      get_data
+    B010603C
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010603C/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010603C/stations/*.xml
+      get_data
+  download_chunk
+    B010603F
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010603F/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010603F/stations/*.xml
+      get_data
+    B010695E
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010695E/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010695E/stations/*.xml
+      get_data
+    B010700A
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010700A/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010700A/stations/*.xml
+      get_data
+    B010701C
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010701C/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010701C/stations/*.xml
+      get_data
+  download_chunk
+    B010702C
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010702C/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010702C/stations/*.xml
+      get_data
+    B010703A
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010703A/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010703A/stations/*.xml
+      get_data
+    B010703C
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010703C/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010703C/stations/*.xml
+      get_data
+    B010796B
+      create-dir
+/gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010796B/stations/*.xml could not be read. Error: No file matching file pattern: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data/B010796B/stations/*.xml
+      get_data

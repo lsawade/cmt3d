@@ -202,7 +202,7 @@ def search_step(node):
     node.add(forward_frechet_mpi)
     node.add(process_synt_and_dsdm)
     node.add(compute_cgh)
-    node.add(f"cmt3d-ioi linesearch {node.outdir}")
+    node.add(f"cmt3d-ioi linesearch {node.outdir}", name="Compute-Optvals")
     node.add(search_check)
 
 

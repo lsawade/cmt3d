@@ -1,0 +1,24 @@
+[job]
+system = [ "nnodes.job", "Summit",]
+name = "Inversion Set"
+nnodes = 5
+account = "GEO111"
+walltime = 60.0
+gap = 2.0
+debug = false
+node_splittable = true
+
+[root]
+task = [ "cmt3d.ioi.nnodes.inversion", "main",]
+inputfile = "/ccs/home/lsawade/gcmt/cmt3d/workflow/nnodes/input.yml"
+# max_conc = 10
+start_index = 10
+end_index = 20
+redo = false
+dbname = "/gpfs/alpine/geo111/scratch/lsawade/DB/GLAD-M25/128_single"
+db_is_local = true
+# Multiprocesses: Number of cores to use for the processing
+backend= 'mpi' #['multiprocessing', 'mpi']
+process_nproc = 6
+window_nproc = 15
+save_interval = 30
