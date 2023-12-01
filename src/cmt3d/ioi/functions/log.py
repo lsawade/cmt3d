@@ -57,6 +57,14 @@ def update_iter(outdir):
     with open(path, "w") as f:
         f.write(f"{iter + 1:d}")
 
+def set_iter(outdir, it):
+
+    # Iter file path
+    fname = 'ITER.txt'
+    path = os.path.join(outdir, fname)
+
+    with open(path, "w") as f:
+        f.write(f"{it:d}")
 
 def reset_iter(outdir):
 
@@ -92,6 +100,17 @@ def update_step(outdir):
     with open(path, "w") as f:
         f.write(f"{step + 1:d}")
 
+
+def set_step(outdir, ls):
+
+    # Iter file path
+    fname = 'STEP.txt'
+    path = os.path.join(outdir, fname)
+
+    with open(path, "w") as f:
+        f.write(f"{ls:d}")
+
+
 def reset_step(outdir):
 
     # Iter file path
@@ -100,6 +119,7 @@ def reset_step(outdir):
 
     with open(path, "w") as f:
         f.write(f"{0:d}")
+
 
 def get_step(outdir):
 

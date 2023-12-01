@@ -12,19 +12,19 @@ from cmt3d.viz.history import history
 
 # %%
 
-outdir = "/gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes/B010395E"
+outdir = "/gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes/B010597A"
+
+cmt = ioi.get_cmt(outdir, 0, 0)
 
 
 # %%
 plt.close('all')
-wave = "mantle"
-component = "R"
+wave = "body"
+component = "Z"
 plot_inversion_section(outdir, wave, windows=False,
                        component=component)
-plt.savefig(f"section_{wave}_{component}.pdf", dpi=300)
 
-# %% get stuff from directory
-cmt = ioi.get_cmt(outdir, 0)
+plt.savefig(f"section/{cmt.eventname}_{wave}_{component}.pdf", dpi=300)
 
 
 # %%
@@ -125,19 +125,43 @@ def plot_cm(cmts, costs, mpar='depth_in_m'):
 
 
 # %%
+
 dbdir = "/gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes"
 outdirs = os.listdir(dbdir)
 
-# for od in outdirs:
+for od in outdirs:
+    # Skip all events except B010896B,B010202D
+    # if "B010896B" not in od:
+    #     continue
+    if "B011696A" not in od:
+        continue
 
+    # Get absolute directory
+    _od = os.path.join(dbdir, od)
 
-# _od = os.path.join(dbdir, od)
-_od = "/gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes/B010395E"
-cmts = read_all_cmt(_od)
-en = cmts[0][0].eventname
-costs = read_all_cost(_od)
-plt.close('all')
-plt.figure()
-plot_cm(cmts, costs, mpar='iteration')
+    cmts = read_all_cmt(_od)
+    en = cmts[0][0].eventname
+    costs = read_all_cost(_od)
 
-# plt.savefig(f"{en}_costs_including_ls.png", dpi=300)
+    try:
+        plt.close('all')
+        history(cmts, costs)
+        plt.savefig(f"history/{en}_history.png", dpi=300)
+    except Exception as e:
+        print(f"{cmts[0][0].eventname} - m/c:", e)
+        pass
+
+    try:
+        plt.close('all')
+        component = "Z"
+        for wave in ['body', 'surface', 'mantle']:
+            plot_inversion_section(_od, wave, windows=False,
+                                   component=component)
+
+            if not os.path.exists(f"section/{cmts[0][0].eventname}"):
+                os.makedirs(f"section/{cmts[0][0].eventname}")
+
+            plt.savefig(
+                f"section/{cmts[0][0].eventname}/{wave}_{component}.pdf", dpi=300)
+    except Exception as e:
+        print(f"{cmts[0][0].eventname} - section:", e)

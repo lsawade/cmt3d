@@ -5,8 +5,6 @@ import cmt3d
 import cmt3d.ioi as ioi
 
 
-
-
 # ----------------------------- MAIN NODE -------------------------------------
 # Loops over events: TODO smarter event check
 def main(node: Node):
@@ -32,44 +30,24 @@ def main(node: Node):
     # we are doing 4 simultaneous events with each 1 thread
     event_chunks = cmt3d.chunkfunc(events, 4)
 
-
     for chunk in event_chunks:
 
-        node.add(download_chunk, concurrent=True, chunk=chunk)
+        node.add(download_chunk, chunk=chunk)
 
 
 def download_chunk(node: Node):
 
+    node.concurrent = True
+
     for eventfilename in node.chunk:
 
         eventname = os.path.basename(eventfilename)
+        downdir, _, _ = ioi.downloaddir(node.inputfile, eventfilename,
+                                        get_dirs_only=True)
 
-        # Get the database directory
-        out = ioi.optimdir(node.inputfile, eventfilename, get_dirs_only=True)
+        # Get data
+        command = f"cmt3d-ioi download {node.inputfile} {eventfilename}"
+        node.add_mpi(command, name=eventname,
+                     cwd=os.path.join(downdir, "nnodes"))
 
-        node.add(download, name=eventname,
-                 eventname=eventname,
-                 outdir=out[0],
-                 eventfile=eventfilename,
-                 log=os.path.join(out[0], 'logs'))
-
-# -----------------------------------------------------------------------------
-
-# Performs iteration
-def download(node: Node):
-
-    try:
-        # Will fail if ITER.txt does not exist
-        firstiterflag = ioi.get_iter(node.outdir) >= 0
-
-    except Exception:
-        firstiterflag = True
-
-    if firstiterflag:
-
-        # Create the inversion directory/makesure all things are in place
-        node.add(ioi.create_forward_dirs, args=(node.eventfile, node.inputfile),
-                 name=f"create-dir", cwd=node.log)
-
-    # Get data
-    node.add_mpi(ioi.get_data, args=(node.outdir,), cwd=node.log)
+# ----------------------------------------------------------------------------

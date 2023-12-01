@@ -29,7 +29,6 @@ import click
 def cli():
     pass
 
-
 @cli.command(name='add-events')
 def add_events():
     from .add_events import bin
@@ -77,16 +76,16 @@ def get_data():
     from .get_data import bin
     bin()
 
-def
-get-data-mpi
-plot-wave
-cmt
-print-cost
-print-model
-print-model-names
-print-optvals
-print-status
-process-data
-process-dsdm
-process-synt
-window
+# def
+# get-data-mpiwhih
+# plot-wave
+# cmt
+# print-cost
+# print-model
+# print-model-names
+# print-optvals
+# print-status
+# process-data
+# process-dsdm
+# process-synt
+# window

@@ -15,6 +15,9 @@ def history(cmts, costs):
     cmap = plt.get_cmap('rainbow')
     colors = cmap(np.linspace(0, 1, len(cmts), endpoint=True))
 
+    # M0
+    M0 = cmts[0][0].M0
+
     # Parameter subplot assignment
     psp = dict(
         time_shift=[0, 0],
@@ -33,6 +36,7 @@ def history(cmts, costs):
     )
 
     for par, (row, col) in psp.items():
+        print(par)
 
         if "m_" in par:
             ax = fig.add_subplot(gs_mt[row, col])
@@ -59,16 +63,24 @@ def history(cmts, costs):
                 else:
                     _m = getattr(_cmt, par)
                     if "m_" in par:
-                        _m /= _cmt.M0
+                        _m /= M0
                     m.append(_m)
 
             # # Find min/max
             # xmin, xmax = 0
             # ymin, ymax = 0
             if par == 'cost':
-                ax.plot(it+iit, c)
+                # Fix for running inversion
+                if len(iit) > len(c):
+                    iit = iit[:len(c)]
+
+                ax.plot(it+iit, c, "-o", c=colors[it], markersize=3)
             else:
-                ax.plot(it+iit, m)
+                # Fix for running inversion
+                if len(iit) > len(m):
+                    iit = iit[:len(m)]
+
+                ax.plot(it+iit, m, "-o", c=colors[it], markersize=3)
 
         if "m_" in par:
             ax.set_ylim(-1.1, 1.1)
@@ -89,5 +101,5 @@ def history(cmts, costs):
 
         plt.xlim([0, None])
         plt.title(f"{par}")
-
+    plt.suptitle(cmts[0][0].eventname)
     plt.show()

@@ -7,6 +7,7 @@ from .log import write_status
 from .utils import downloaddir
 import time
 
+
 def cpdir(src, dst):
     """Copies entire directory from src to dst
 
@@ -20,16 +21,10 @@ def cpdir(src, dst):
     copy_tree(src, dst)
 
 
-def get_data(outdir: str):
-
-    # Get cmt file
-    cmtfilename = os.path.join(outdir, 'meta', 'init_model.cmt')
+def get_data(inputfile: str, cmtfilename: str):
 
     # Load CMT solution
     cmtsource = cmt3d.CMTSource.from_CMTSOLUTION_file(cmtfilename)
-
-    # Get input file
-    inputfile = os.path.join(outdir, 'input.yml')
 
     # Read input param file
     inputparams = cmt3d.read_yaml(inputfile)
@@ -75,9 +70,9 @@ def get_data(outdir: str):
             # Check whether download can be called successful
             if (len(os.listdir(waveformdir)) <= 30) \
                     or (len(os.listdir(stationdir)) <= 10):
-                write_status(outdir, "FAILED")
+                write_status(downdir, "FAILED")
             else:
-                write_status(outdir, "DOWNLOADED")
+                write_status(downdir, "DOWNLOADED")
 
         except Exception as e:
             print(f'Retry caught exception try {i+1}/{Ntry}')
@@ -118,7 +113,6 @@ def stage_data(outdir: str):
     # Copy Waveforms
     cpdir(src_waveforms, dst_waveforms)
     cpdir(src_stations, dst_stations)
-
 
 
 def bin():

@@ -25,10 +25,11 @@ def make_subset(outdir: str, dbname: str, local: bool):
 
 
 @cli.command(name='download')
-@click.argument('outdir', type=str)
-def download(outdir: str):
+@click.argument('inputfilename', type=str)
+@click.argument('cmtfilename', type=str)
+def download(inputfilename: str, cmtfilename: str):
     from .functions.get_data import get_data
-    get_data(outdir)
+    get_data(inputfilename, cmtfilename)
 
 
 @cli.command(name='forward-kernel')
@@ -188,3 +189,62 @@ def reset_step(outdir):
 def linesearch(outdir: str):
     from .functions.linesearch import linesearch
     linesearch(outdir)
+
+
+@cli.group()
+def nnodes():
+    pass
+
+
+@nnodes.command(name='reset-linesearch')
+def nnodes_reset_linesearch():
+    from .bin.reset_linesearch import bin
+    bin()
+
+@nnodes.command(name='reset-steps')
+def nnodes_reset_steps():
+    from .bin.reset_steps import bin
+    bin()
+
+
+@nnodes.command(name='fix-iter')
+def nnodes_reset_steps():
+    from .bin.adjust_iteration import bin
+    bin()
+
+@cli.group()
+def testio():
+    pass
+
+@testio.command(name='create-file')
+@click.argument('file', type=str)
+def create_file(file):
+    from pathlib import Path
+    from time import sleep
+
+    sleep(2)
+    Path(file).touch()
+
+
+@testio.command(name='sleep')
+@click.argument('seconds', type=int)
+def sleep(seconds: int):
+    from sys import argv
+    from time import sleep
+    sleep(seconds)
+
+
+@testio.command(name='check-files')
+@click.argument('filedir', type=str)
+def check_files(filedir):
+    import os
+    from glob import glob
+
+    # Check files
+    event_ids = glob(os.path.join(filedir,'*'))
+
+    with open('tempfilelist.txt', 'w') as f:
+        for event_id in event_ids:
+            print(os.path.basename(event_id), file=f)
+
+

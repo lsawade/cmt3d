@@ -21,20 +21,34 @@ def main(node: Node):
     # Get todo events
     event_dir = inputparams['events']
 
-    # Get all events
-    events = [os.path.join(event_dir, ev_file)
-              for ev_file in os.listdir(event_dir)]
+    if node.eventid is not None:
+        print("Getting specific event...")
+        if "," in node.eventid:
+            ids = node.eventid.split(",")
+            events = [os.path.join(event_dir, id) for id in ids]
+        else:
+            events = [os.path.join(event_dir, node.eventid), ]
+    else:
+        print("Getting all events ...")
+        # Get todo events
+        event_dir = inputparams['events']
 
-    # Sort the events
-    events.sort()
+        # Get all events
+        events = [os.path.join(event_dir, ev_file)
+                  for ev_file in os.listdir(event_dir)]
 
-    # Filter by end index
-    if node.end_index:
-        events = events[:node.end_index]
+        # Sort the events
+        events.sort()
 
-    # Filter by start index
-    if node.start_index:
-        events = events[node.start_index:]
+        # Filter by end index
+        if node.end_index:
+            print(f"Getting events until idx {node.end_index} ...")
+            events = events[:node.end_index]
+
+        # Filter by start index
+        if node.start_index:
+            print(f"Getting events from idx {node.start_index} ...")
+            events = events[node.start_index:]
 
     # # Filter by checking which events are done.
     # if not node.redo:
@@ -147,6 +161,10 @@ def preprocess(node: Node):
         status = 'NEW'
 
     if firstiterflag or node.redo or 'FAIL' in status:
+
+        # Remove all files before rerunning the inversion
+        if node.redo:
+            node.rm(node.outdir)
 
         # Create the inversion directory/makesure all things are in place
         command = f"cmt3d-ioi create {node.eventfile} {node.inputfile}"
@@ -336,6 +354,7 @@ def process_dsdm(node: Node):
 
     # Get parameters
     processdict = cmt3d.read_yaml(os.path.join(node.outdir, 'process.yml'))
+    print(node.eventname, node.outdir, processdict.keys())
 
     # Process the frechet derivatives
     NM = len(ioi.read_model_names(node.outdir))
@@ -480,6 +499,3 @@ def search_check(node: Node):
     elif flag == "ADDSTEP":
         # Update step
         node.parent.parent.add(search_step)
-
-
-# %%

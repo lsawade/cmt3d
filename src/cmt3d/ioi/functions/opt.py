@@ -21,10 +21,12 @@ def constrain_model(outdir, m):
     inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
 
     # If no parameters should be constraint, return
-    if hasattr(inputparams, 'parameter_constraints') is False:
+    if (('parameter_constraints' in inputparams) is False) or (
+            inputparams['parameter_constraints'] is None):
+        write_log(outdir, f"No constraints")
         return m
-    elif inputparams['parameter_constraints'] is None:
-        return m
+    else:
+        write_log(outdir, f"{inputparams['parameter_constraints']}")
 
     # Get lower and upper constraints
     lower = inputparams['parameter_constraints']['lower']
@@ -33,12 +35,15 @@ def constrain_model(outdir, m):
     # Get model names
     mnames = read_model_names(outdir)
 
+    write_log(outdir, f"Original    model: {m}")
+
     # Set lower bound for the model update
     if lower is not None:
         for _par, _low in lower.items():
             idx = mnames.index(_par)
 
             if m[idx] < _low:
+                write_log(outdir, f"Constraining {_par} to min {_low}")
                 m[idx] = _low
 
     # Set upper bound for the model update
@@ -47,7 +52,10 @@ def constrain_model(outdir, m):
             idx = mnames.index(_par)
 
             if m[idx] > _upp:
+                write_log(outdir, f"Constraining {_par} to max {_upp}")
                 m[idx] = _upp
+
+    write_log(outdir, f"Constrained model: {m}")
 
     return m
 
@@ -164,7 +172,8 @@ def check_done(outdir):
 
     init_cost_change = cost/cost_init
     rel_cost_change = np.abs(cost - cost_old)/cost_init
-    rel_model_change = np.sum((smodel - smodel_prev)**2)/np.sum((smodel_prev)**2)
+    rel_model_change = np.sum((smodel - smodel_prev)
+                              ** 2)/np.sum((smodel_prev)**2)
 
     write_log(outdir, f"      init_cost_change: {init_cost_change}")
     write_log(outdir, f"      rel_cost_change: {rel_cost_change}")

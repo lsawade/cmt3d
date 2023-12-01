@@ -4,7 +4,7 @@ body:
     water_level: 100.0
     filter_flag: True
     pre_filt: [0.0030, 0.0040, 0.0111, 0.0139]
-    relative_starttime: 100
+    relative_starttime: 0
     relative_endtime: 3300
     resample_flag: True
     sampling_rate: 0.5
@@ -26,11 +26,11 @@ body:
         s2n_limit_energy: 3.0
         window_signal_to_noise_type: amplitude
         selection_mode: body_waves
-        min_surface_wave_velocity: 3.20
-        max_surface_wave_velocity: 4.10
+        min_surface_wave_velocity: 2.5
+        max_surface_wave_velocity: 4.5
         earth_model: ak135
         max_time_before_first_arrival: 100.0
-        max_time_after_last_arrival: 200.0
+        max_time_after_last_arrival: 0.0
         check_global_data_quality: True
         snr_integrate_base: 3.5
         snr_max_base: 3.0
@@ -41,7 +41,7 @@ body:
         c_3b: 2.0
         c_4a: 3.0
         c_4b: 10.0
-        resolution_strategy: interval_scheduling
+        resolution_strategy: merge
         # instrument_merge_flag: True
       components:
         Z:
@@ -69,7 +69,7 @@ body:
         window_signal_to_noise_type: amplitude
         selection_mode: phase_list:PcP,ScS,PcS,ScP
         min_surface_wave_velocity: 3.20
-        max_surface_wave_velocity: 4.10
+        max_surface_wave_velocity: 6.5
         earth_model: ak135
         max_time_before_first_arrival: 100.0
         max_time_after_last_arrival: 200.0
@@ -83,7 +83,7 @@ body:
         c_3b: 2.0
         c_4a: 3.0
         c_4b: 10.0
-        resolution_strategy: interval_scheduling
+        resolution_strategy: merge
         # instrument_merge_flag: True
       components:
         Z:
@@ -103,7 +103,7 @@ surface:
     water_level: 100.0
     filter_flag: True
     pre_filt: [0.0030, 0.0040, 0.0111, 0.0139]
-    relative_starttime: 100
+    relative_starttime: 0
     relative_endtime: 3300
     resample_flag: True
     sampling_rate: 0.5
@@ -140,7 +140,7 @@ surface:
         c_3b: 2.0
         c_4a: 3.0
         c_4b: 10.0
-        resolution_strategy: interval_scheduling
+        resolution_strategy: merge
         # instrument_merge_flag: True
       components:
         Z:
@@ -156,7 +156,7 @@ mantle:
     water_level: 100.0
     filter_flag: True
     pre_filt: [0.0030, 0.0040, 0.0111, 0.0139]
-    relative_starttime: 100
+    relative_starttime: 0
     relative_endtime: 3300
     resample_flag: True
     sampling_rate: 0.5
@@ -168,7 +168,7 @@ mantle:
     - config:
         min_period: 90.0
         max_period: 250.0
-        stalta_waterlevel: 0.080
+        stalta_waterlevel: 0.085
         tshift_acceptance_level: 25.0
         tshift_reference: 0.0
         dlna_acceptance_level: 0.8
@@ -179,10 +179,10 @@ mantle:
         window_signal_to_noise_type: amplitude
         selection_mode: surface_waves
         min_surface_wave_velocity: 2.50
-        max_surface_wave_velocity: 5.00
+        max_surface_wave_velocity: 6.6
         earth_model: ak135
         max_time_before_first_arrival: 200.0
-        max_time_after_last_arrival: 400.0
+        max_time_after_last_arrival: 12000.0
         check_global_data_quality: True
         snr_integrate_base: 3.5
         snr_max_base: 6.0
@@ -193,11 +193,9 @@ mantle:
         c_3b: 2.0
         c_4a: 3.0
         c_4b: 10.0
-        resolution_strategy: interval_scheduling
+        resolution_strategy: merge
         # instrument_merge_flag: True
       components:
         Z:
         R:
         T:
-          min_surface_wave_velocity: 3.0
-          max_surface_wave_velocity: 6.5

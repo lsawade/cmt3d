@@ -6,6 +6,8 @@
 #SBATCH -e slurm.%J.e
 #SBATCH -A GEO111
 
+
+. /ccs/home/lsawade/dtn_miniconda3/bin/activate gf-dtn
 conda activate gf-dtn
 
 python -c "from nnodes import root; root.run()"

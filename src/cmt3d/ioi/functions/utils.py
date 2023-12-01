@@ -689,7 +689,7 @@ def create_gfm(outdir, dbname: str, local: bool = True):
                 GFM.load_header_variables()
                 GFM.write_subset_directIO(subsetfilename,
                                           cmt.latitude, cmt.longitude, cmt.depth_in_m/1000.0,
-                                          dist_in_km=75.0, NGLL=5,
+                                          dist_in_km=85.0, NGLL=5,
                                           fortran=False)
 
         else:

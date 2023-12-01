@@ -57,11 +57,12 @@ def plot_inversion_section(outdir, wtype, windows: bool, component='Z'):
                         origin_time=cmt0.origin_time, lw=0.25,
                         comp=component,
                         plot_amplitudes=False,
-                        plot_geometry=False,
+                        plot_geometry=True,
                         scale=scale,
                         legendargs=dict(loc='lower right', ncol=4,
                                         frameon=False,
                                         bbox_to_anchor=(1, 1)),
+                        az_label=False,
                         window=True)
     ax.tick_params(axis='y', labelsize='xx-small')
     plt.show()

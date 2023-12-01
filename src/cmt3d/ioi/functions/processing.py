@@ -649,7 +649,7 @@ def window_wave(outdir, wavetype, multiprocesses=1, verbose=True):
                     print("    ... in serial")
 
                 # Windowing
-                owl.window_on_stream(data, synt, **wrapwindowdict)
+                data = owl.window_on_stream(data, synt, **wrapwindowdict)
 
             else:
 

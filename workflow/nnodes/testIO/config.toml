@@ -1,0 +1,12 @@
+[job]
+system = [ "nnodes.job", "Summit",]
+name = "Inversion Set"
+nnodes = 1
+account = "GEO111"
+walltime = 60.0
+gap = 5.0
+debug = false
+node_splittable = true
+
+[root]
+task = ["testIO", "workflow",]

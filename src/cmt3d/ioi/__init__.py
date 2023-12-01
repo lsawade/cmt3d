@@ -26,7 +26,7 @@ from .functions.processing import process_data, process_synt, process_dsdm, \
 from .functions.utils import optimdir, createdir, rmdir, \
     prepare_inversion_dir, prepare_model, prepare_stations, \
     prepare_simulation_dirs, create_forward_dirs, wcreate_forward_dirs, \
-    create_gfm
+    create_gfm, downloaddir
 
 # These are the functions that are basefunction
 from .functions.log import clear_log
@@ -77,5 +77,6 @@ __all__ = [
     "process_data_wave", "process_data_wave_mpi",
     "forward_kernel",
     "read_descent", "write_descent",
-    "check_window_count"
+    "check_window_count",
+    "downloaddir"
 ]

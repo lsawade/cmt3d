@@ -15,3 +15,4 @@ max_evenllts = 7
 nproc = 20
 dbname = "/gpfs/alpine/geo111/scratch/lsawade/DB/GLAD-M25/128_single"
 db_is_local = true
+save_interval = 60
