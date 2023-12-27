@@ -18,3 +18,4 @@ workflow/nnodes/inversion/*.pdf
 workflow/nnodes/inversion/*.png
 workflow/nnodes/testIO/events
 workflow/nnodes/testIO/tempfilelist.txt
+workflow/nnodes/LimitIO
