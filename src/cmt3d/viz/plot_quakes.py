@@ -7,9 +7,7 @@ from matplotlib.colors import ListedColormap, BoundaryNorm
 from matplotlib.ticker import FixedLocator
 from cartopy.crs import PlateCarree
 import numpy as np
-
-from .. import plot as lplt
-from .. import maps as lmap
+from . import utils
 
 
 def get_level_norm_cmap(depth, cmap: str, levels: list = None):
@@ -41,7 +39,7 @@ def get_level_norm_cmap(depth, cmap: str, levels: list = None):
 
     # Create
     colormap = plt.get_cmap(cmap)
-    colors = lplt.pick_colors_from_cmap(len(levels), colormap)
+    colors = utils.pick_colors_from_cmap(len(levels), colormap)
     cmap = ListedColormap(colors)
     norm = BoundaryNorm(levels, cmap.N)
 
@@ -111,8 +109,8 @@ def plot_quakes(latitude, longitude, depth, moment,
     if ax is None:
         plt.figure(figsize=(9, 5.25))
         plt.subplots_adjust(left=0.025, right=0.975, bottom=0.15, top=0.95)
-        ax = lmap.map_axes(proj="moll", central_longitude=-150.0)
-        lmap.plot_map(zorder=-1)
+        ax = utils.map_axes(proj="moll", central_longitude=-150.0)
+        utils.plot_map(zorder=-1)
 
     # Fix moments
     rmoments = np.floor(moment)
@@ -155,7 +153,7 @@ def plot_quakes(latitude, longitude, depth, moment,
             frameon=False, fontsize=legendfontsize,
             title_fontsize=title_fontsize,
             bbox_transform=ax.transAxes)
-        lplt.right_align_legend(legend1)
+        utils.right_align_legend(legend1)
         ax.add_artist(legend1)
 
         # Get Size props of the legend entries.
@@ -171,7 +169,7 @@ def plot_quakes(latitude, longitude, depth, moment,
                 f"{_unique_moment:>4.1f} - {_unique_moment + 1:>4.1f}")
             # Set handles
             handle, = plt.plot(
-                [], [], 'o', markersize=np.sqrt(sizefunc(_unique_moment+0.5)),
+                [], [], 'o', markersize=np.sqrt(sizefunc(_unique_moment)),
                 markeredgecolor='k', markeredgewidth=0.1,
                 markerfacecolor='darkgray', linestyle='none')
 
@@ -185,7 +183,7 @@ def plot_quakes(latitude, longitude, depth, moment,
             ncol=1, handletextpad=0.2,
             fontsize=legendfontsize, title_fontsize=title_fontsize,
             bbox_transform=ax.transAxes)
-        lplt.right_align_legend(legend2)
+        utils.right_align_legend(legend2)
 
         return scatter, ax, legend1, legend2
     else:

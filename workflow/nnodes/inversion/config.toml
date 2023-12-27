@@ -1,10 +1,10 @@
 [job]
 system = [ "nnodes.job", "Summit",]
 name = "Inversion Set"
-nnodes = 100
+nnodes = 50
 account = "GEO111"
-walltime = 120.0
-gap = 5.0
+walltime = 150.0
+gap = 10.0
 debug = false
 node_splittable = true
 
@@ -17,9 +17,11 @@ inputfile = "/ccs/home/lsawade/gcmt/cmt3d/workflow/nnodes/input.yml"
 # start_index = 0
 # end_index = 10
 # max_conc = 10
-start_index = 40
-end_index = 140
+subset_max_conc = 5 # max number of subsets to get simultaneously
+start_index = 238
+end_index = 288
 redo = true
+redo_keep_subset = true
 dbname = "/gpfs/alpine/geo111/scratch/lsawade/DB/GLAD-M25/128_single"
 db_is_local = true
 # Multiprocesses: Number of cores to use for the processing

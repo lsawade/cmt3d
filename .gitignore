@@ -4,3 +4,17 @@ __pycache__
 docs/build
 *.h5
 *.pickle
+scripts/events
+cmt3d_events
+scripts/*.png
+scripts/*.pdf
+build
+scripts/history
+gcmtcatalog.ndk
+scripts/plots
+scripts/section
+scripts/section
+workflow/nnodes/inversion/*.pdf
+workflow/nnodes/inversion/*.png
+workflow/nnodes/testIO/events
+workflow/nnodes/testIO/tempfilelist.txt

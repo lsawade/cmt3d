@@ -13,7 +13,7 @@ import cmt3d.ioi as ioi
 def main(node: Node):
 
     print('Hello')
-    node.concurrent = False
+    node.concurrent = True
 
     # Get input file
     inputparams = cmt3d.read_yaml(node.inputfile)
@@ -50,70 +50,144 @@ def main(node: Node):
             print(f"Getting events from idx {node.start_index} ...")
             events = events[node.start_index:]
 
-    # # Filter by checking which events are done.
-    # if not node.redo:
+    node.add(create_dirs_and_subsets, events=events, name='Subset-Events')
+    node.add(eventloop, events=events, name='Event-Loop')
 
-    #     # get out dirs
-    #     new_events = []
+# def subworkflow(node: Node):
 
-    #     for _event in events:
+#     node.concurrent = True
+#     node.add(create_dirs_and_subsets, events=node.events, name='Subset-Events')
+#     node.add(eventloop, events=node.events, name='Event-Loop')
 
-    #         # Get name
-    #         _eventname = os.path.basename(_event)
+def create_dirs_and_subsets(node: Node):
 
-    #         try:
-    #             # Get inversion directory
-    #             out = ioi.optimdir(node.inputfile, _event, get_dirs_only=True)
-    #             outdir = out[0]
+    event_chunks = cmt3d.chunkfunc(node.events, node.subset_max_conc)
 
-    #             # Check status
-    #             status = ioi.read_status(outdir)
+    node.add(create_dirs_and_subsets_chunk, event_chunks=event_chunks,)
 
-    #             # If events
-    #             if 'FINISHED' not in status:
-    #                 ioi.reset_iter(outdir)
-    #                 ioi.reset_step(outdir)
+def create_dirs_and_subsets_chunk(node: Node):
 
-    #             new_events.append(_event)
-
-    #         except FileNotFoundError:
-    #             print(f"No inversion directory for {_eventname}")
-
-    #     # Replace original list of events
-    #     events = new_events
-
-    # The massdownloader suggest only 4 threads at a time. So here
-    # we are doing 4 simultaneous events with each 1 thread
-    if node.max_conc is not None:
-        event_chunks = cmt3d.chunkfunc(events, node.max_conc)
-    else:
-        event_chunks = [events, ]
+    node.concurrent = True
 
     # Check if done
-    for _i, chunk in enumerate(event_chunks):
-        # print(_i, [os.path.basename(_ev) for _ev in chunk])
-        node.add(invert_chunk, chunk=chunk, name=",".join(
-            os.path.basename(_ev) for _ev in chunk))
+    if len(node.event_chunks) >= 1:
+
+        # Loop over events in first chunk
+        for _i, event in enumerate(node.event_chunks[0]):
+
+            # Get event name and and outfile
+            out = ioi.optimdir(node.inputfile, event, get_dirs_only=True)
+            outdir = out[0]
+
+            # directory and subset creation stage
+            node.add(create_dir_and_subset, event=event, eventfile=event,
+                     name=f"Create-Dir-and-Subset-{event}",
+                     outdir=outdir, log=os.path.join(outdir, 'logs'))
+
+    # Feed rest of chunk
+    if len(node.event_chunks) > 1:
+        # here the name has to be the second index (1)!
+        # otherwise the name will be overwritten.
+        node.parent.add(create_dirs_and_subsets_chunk,
+                        event_chunks=node.event_chunks[1:])
+
+        #name=",".join([os.path.basename(event) for event in node.event_chunks[1]])
 
 # -----------------------------------------------------------------------------
+def create_dir_and_subset(node: Node):
+
+    node.concurrent = False
+
+    try:
+        # Will fail if ITER.txt does not exist
+        firstiterflag = ioi.get_iter(node.outdir) == 0
+
+        # Will fail if no status message is present
+        status = ioi.read_status(node.outdir)
+
+    except Exception:
+        firstiterflag = True
+        status = 'NEW'
+
+    if firstiterflag or node.redo or 'FAIL' in status:
+
+        # Remove files before rerunning the inversion
+        # all
+        if node.redo:
+            node.rm(node.outdir)
+        # everything but subset, so that we don't need to reget the subset
+        elif node.redo_keep_subset:
+            node.add(f"find {node.outdir} ! -name 'subset.h5' -type f -exec rm -f {{}}+")
+
+        # Create the inversion directory/makesure all things are in place
+        command = f"cmt3d-ioi create {node.eventfile} {node.inputfile}"
+        node.add(command, name=f"Create-Inv-dir", cwd=node.log)
+
+        # Load Green function
+        if not os.path.exists(os.path.join(node.outdir, 'meta', 'subset.h5')):
+            node.add(get_subset)
+
+        node.add(f'touch {node.outdir}/INIT.txt')
 
 
-def invert_chunk(node: Node):
+def eventloop(node: Node):
 
     # Each chunk should run concurrently
     node.concurrent = True
 
-    for _event in node.chunk:
+    # Node loop function
+    node.add(eventcheck, events=node.events)
 
+
+def eventcheck(node: Node):
+
+    # Get events
+    events = node.events
+
+    # Check if subset exists for file
+    idx = []
+
+    print("Events: ", ",".join([os.path.basename(event) for event in events]))
+
+    # Loop over events
+    for _i, _event in enumerate(events):
+
+        # Get even name and and outfile
         eventname = os.path.basename(_event)
         out = ioi.optimdir(node.inputfile, _event, get_dirs_only=True)
         outdir = out[0]
 
-        node.add(cmtinversion, name=eventname,
-                 eventname=eventname,
-                 outdir=outdir,
-                 eventfile=_event,
+        # Check if subset is there and add to list
+        if os.path.exists(os.path.join(outdir, 'meta', 'subset.h5')) \
+            and os.path.exists(os.path.join(outdir, 'INIT.txt')):
+            pass
+        else:
+            continue
+
+        print(f'Adding event {eventname} to inversion loop.')
+
+        # Save the event index to pop after
+        idx.append(_i)
+
+        node.parent.add(cmtinversion,
+                 name=eventname, eventname=eventname,
+                 outdir=outdir, eventfile=_event,
                  log=os.path.join(outdir, 'logs'))
+
+    # Reverse indeces to pop backwards and not mess with the list
+    idx.sort(reverse=True)
+
+    # Pop events
+    for _i in idx:
+        events.pop(_i)
+
+    # Add more events if there are any left.
+    if len(events) > 0:
+        child_node = node.add('sleep 60', name="Event-Loop-Resting-Phase")
+        child_node.add(update_parent, events=events)
+
+def update_parent(node: Node):
+    node.parent.parent.parent.add(eventcheck, events=node.events)
 
 # ---------------------------- CMTINVERSION -----------------------------------
 
@@ -147,31 +221,6 @@ def maybe_invert(node: Node):
 
 
 def preprocess(node: Node):
-    node.concurrent = False
-
-    try:
-        # Will fail if ITER.txt does not exist
-        firstiterflag = ioi.get_iter(node.outdir) == 0
-
-        # Will fail if no status message is present
-        status = ioi.read_status(node.outdir)
-
-    except Exception:
-        firstiterflag = True
-        status = 'NEW'
-
-    if firstiterflag or node.redo or 'FAIL' in status:
-
-        # Remove all files before rerunning the inversion
-        if node.redo:
-            node.rm(node.outdir)
-
-        # Create the inversion directory/makesure all things are in place
-        command = f"cmt3d-ioi create {node.eventfile} {node.inputfile}"
-        node.add(command, name=f"Create-Inv-dir", cwd=node.log)
-
-        # Load Green function
-        node.add(get_subset)
 
         # Get data
         # node.add(ioi.get_data, args=(node.outdir,))

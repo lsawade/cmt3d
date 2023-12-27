@@ -195,6 +195,13 @@ def linesearch(outdir: str):
 def nnodes():
     pass
 
+@nnodes.command(name='reset')
+@click.argument('events', nargs=-1)
+@click.option('--level', type=str, default='inversion')
+def nnodes_reset(events, level):
+    from .bin.reset_inversion import bin
+    bin(events, level)
+
 
 @nnodes.command(name='reset-linesearch')
 def nnodes_reset_linesearch():

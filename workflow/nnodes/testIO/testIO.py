@@ -34,7 +34,8 @@ def subsetchunk(node: Node):
 
             # Make event file
             eventfile = os.path.join('events', event_id)
-            node.add(f'touch {eventfile} && sleep 3', event_id=event_id, name=f'create-{eventfile}')
+            node.add(f'touch {eventfile} && sleep 30', event_id=event_id,
+                     name=f'create-{eventfile}')
 
     if len(node.chunks) > 1:
         node.parent.add(subsetchunk, chunks=node.chunks[1:])
@@ -44,10 +45,13 @@ def eventloop(node: Node):
 
     node.concurrent = True
 
+    node.add(inversionloop)
     node.add(eventcheck, events=node.events)
 
 
 def eventcheck(node: Node):
+
+    node.concurrent = False
 
     # Get events
     events = node.events
@@ -65,7 +69,7 @@ def eventcheck(node: Node):
         idxs = []
         for event_id in event_ids:
             if event_id.strip() in events:
-                node.parent.add(inversion, event=event_id.strip())
+                node.parent[0].add(inversion, event=event_id.strip())
                 idxs.append(events.index(event_id.strip()))
 
         # Pop backwards to not mess with the list
@@ -77,13 +81,21 @@ def eventcheck(node: Node):
 
     if len(events) > 0:
         print(events)
-        node.add('sleep 1')
+        node.add('sleep 15', name='eventcheck-sleep')
         node.parent.add(eventcheck, events=events)
 
+
+def inversionloop(node: Node):
+
+    node.concurrent = True
+    node.add('sleep 15', name='inversionloop-sleep')
+    if len(node.parent[len(node.parent)-1].events) != 0:
+        node.parent.add(inversionloop)
 
 def inversion(node: Node):
 
     print('Inverting event: ', node.event)
+    node.add('sleep 60', name='inversion-sleep')
 
 
 

@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from cmt3d.viz.plot_inversion_section import plot_inversion_section
 from cmt3d.viz.history import history
 
+
+
 # %%
 
 outdir = "/gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes/B010597A"
