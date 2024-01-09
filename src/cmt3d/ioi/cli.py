@@ -1,4 +1,17 @@
+#!/usr/bin/env python
+
+import sys
 import click
+
+def mpiabort_excepthook(type, value, traceback):
+    from mpi4py import MPI
+
+    traceback.print_exc()
+    print('', flush=True)
+
+    mpi_comm = MPI.COMM_WORLD
+    mpi_comm.Abort(1)
+    sys.__excepthook__(type, value, traceback)
 
 
 @click.group()
@@ -34,9 +47,64 @@ def download(inputfilename: str, cmtfilename: str):
 
 @cli.command(name='forward-kernel')
 @click.argument('outdir', type=str)
-def forward_kernel_mpi(outdir: str):
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
+def forward_kernel_mpi(outdir: str, it=None, ls=None):
+    from mpi4py import MPI
+    mpi_comm = MPI.COMM_WORLD
+
+    def mpiabort_excepthook(type, value, traceback):
+        mpi_comm.Abort(1)
+        sys.__excepthook__(type, value, traceback)
+
     from .functions.forward_kernel import forward_kernel
-    forward_kernel(outdir)
+    sys.excepthook = mpiabort_excepthook
+    forward_kernel(outdir, it=it, ls=ls)
+    sys.excepthook = sys.__excepthook__
+
+
+
+@cli.command(name='step-mfpcghc')
+@click.argument('outdir', type=str)
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
+@click.option('--verbose', is_flag=True, show_default=True, default=True,
+              help='verbose    ', type=bool)
+@click.option('--cgh-only', is_flag=True, show_default=True, default=False,
+              help='only compute cgh    ', type=bool)
+@click.option('--fw-only', is_flag=True, show_default=True, default=False,
+              help='only forward modeling    ', type=bool)
+def step_mfpcghc(outdir: str, it=None, ls=None, verbose=False,
+                 cgh_only=False, fw_only=False):
+
+    from mpi4py import MPI
+    mpi_comm = MPI.COMM_WORLD
+
+    def mpiabort_excepthook(type, value, traceback):
+        mpi_comm.Abort(1)
+        sys.__excepthook__(type, value, traceback)
+
+    from .functions.step_mfpcghc import \
+        model_update, forward_kernel, process_all_synt, cghc
+
+    sys.excepthook = mpiabort_excepthook
+
+    if not cgh_only and not fw_only:
+        model_update(outdir, it=it, ls=ls)
+
+    if not cgh_only:
+        forward_kernel(outdir, it=it, ls=ls)
+        process_all_synt(outdir, it=it, ls=ls, verbose=verbose)
+
+    if not fw_only:
+        cghc(outdir, it=it, ls=ls, cgh_only=cgh_only, verbose=verbose)
+
+    sys.excepthook = sys.__excepthook__
+
 
 
 @cli.group()
@@ -50,38 +118,55 @@ def process():
 @click.option('--nproc', show_default=True, default=0,
               help='number of multiprocesses (relevant for not MPI)')
 def process_data(outdir, wave, nproc):
-    from .functions.processing import process_data_wave, process_data_wave_mpi
     if nproc == 0:
+        from .functions.processing import process_data_wave_mpi
+        sys.excepthook = mpiabort_excepthook
         process_data_wave_mpi(outdir, wave)
+        sys.excepthook = sys.__excepthook__
     else:
+        from .functions.processing import process_data_wave
         process_data_wave(outdir, wave, multiprocesses=nproc)
 
 
 @process.command(name="synt")
 @click.argument('outdir', type=str)
 @click.argument('wave', type=str)
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
 @click.option('--nproc', show_default=True, default=0,
               help='number of multiprocesses (relevant for not MPI)')
-def process_synt(outdir, wave, nproc):
-    from .functions.processing import process_synt_wave, process_synt_wave_mpi
+def process_synt(outdir, wave, it=None, ls=None, nproc=0):
     if nproc == 0:
-        process_synt_wave_mpi(outdir, wave)
+        from .functions.processing import process_synt_wave_mpi
+        sys.excepthook = mpiabort_excepthook
+        process_synt_wave_mpi(outdir, wave, it=it, ls=ls)
+        sys.excepthook = sys.__excepthook__
     else:
-        process_synt_wave(outdir, wave, multiprocesses=nproc)
+        from .functions.processing import process_synt_wave
+        process_synt_wave(outdir, wave, it=it, ls=ls, multiprocesses=nproc)
 
 
 @process.command(name="dsdm")
 @click.argument('outdir', type=str)
 @click.argument('nm', type=int)
 @click.argument('wave', type=str)
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
 @click.option('--nproc', show_default=True, default=0,
               help='number of multiprocesses (relevant for not MPI)')
-def process_dsdm(outdir, nm, wave, nproc):
-    from .functions.processing import process_dsdm_wave, process_dsdm_wave_mpi
+def process_dsdm(outdir, nm, wave, it=None, ls=None, nproc=0):
     if nproc == 0:
-        process_dsdm_wave_mpi(outdir, nm, wave)
+        from .functions.processing import process_dsdm_wave_mpi
+        sys.excepthook = mpiabort_excepthook
+        process_dsdm_wave_mpi(outdir, nm, wave, it=it, ls=ls)
+        sys.excepthook = sys.__excepthook__
     else:
-        process_dsdm_wave(outdir, nm, wave, multiprocesses=nproc)
+        from .functions.processing import process_dsdm_wave
+        process_dsdm_wave(outdir, nm, wave, it=it, ls=ls, multiprocesses=nproc)
 
 
 @cli.group()
@@ -97,8 +182,12 @@ def window():
 def window_select(outdir, wave, nproc):
     from .functions.processing import window_wave, window_wave_mpi
     if nproc == 0:
+        from .functions.processing import window_wave_mpi
+        sys.excepthook = mpiabort_excepthook
         window_wave_mpi(outdir, wave)
+        sys.excepthook = sys.__excepthook__
     else:
+        from .functions.processing import window_wave
         window_wave(outdir, wave, nproc)
 
 
@@ -123,44 +212,68 @@ def model():
 
 @model.command(name="update")
 @click.argument('outdir', type=str)
-def model_update(outdir: str):
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
+def model_update(outdir: str, it=None, ls=None):
     from .functions.opt import update_model
-    update_model(outdir)
+    update_model(outdir, it=it, ls=ls)
 
 
 @model.command(name="transfer")
 @click.argument('outdir', type=str)
-def model_transfer(outdir: str):
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
+def model_transfer(outdir: str, it=None, ls=None):
     from .functions.opt import update_mcgh
-    update_mcgh(outdir)
+    update_mcgh(outdir, it=it, ls=ls)
 
 
 @cli.command(name="cost")
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
 @click.argument('outdir', type=str)
-def compute_cost(outdir: str):
+def compute_cost(outdir: str, it=None, ls=None):
     from .functions.cost import cost
-    cost(outdir)
+    cost(outdir, it=it, ls=ls)
 
 
 @cli.command(name="gradient")
 @click.argument('outdir', type=str)
-def compute_gradient(outdir: str):
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
+def compute_gradient(outdir: str, it=None, ls=None):
     from .functions.gradient import gradient
-    gradient(outdir)
+    gradient(outdir, it=it, ls=ls)
 
 
 @cli.command(name="hessian")
 @click.argument('outdir', type=str)
-def compute_hessian(outdir: str):
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
+def compute_hessian(outdir: str, it=None, ls=None):
     from .functions.hessian import hessian
-    hessian(outdir)
+    hessian(outdir, it=it, ls=ls)
 
 
 @cli.command(name="descent")
 @click.argument('outdir', type=str)
-def compute_descent(outdir: str):
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
+def compute_descent(outdir: str, it=None, ls=None):
     from .functions.descent import descent
-    descent(outdir)
+    descent(outdir, it=it, ls=ls)
 
 
 @cli.command(name='update-step')
@@ -186,9 +299,13 @@ def reset_step(outdir):
 
 @cli.command(name='linesearch')
 @click.argument('outdir', type=str)
-def linesearch(outdir: str):
+@click.option('--it', show_default=True, default=None, help='iteration #',
+              type=int)
+@click.option('--ls', show_default=True, default=None, help='step      #',
+              type=int)
+def linesearch(outdir: str, it=None, ls=None):
     from .functions.linesearch import linesearch
-    linesearch(outdir)
+    linesearch(outdir, it=it, ls=ls)
 
 
 @cli.group()
@@ -213,45 +330,28 @@ def nnodes_reset_steps():
     from .bin.reset_steps import bin
     bin()
 
-
 @nnodes.command(name='fix-iter')
 def nnodes_reset_steps():
     from .bin.adjust_iteration import bin
     bin()
 
-@cli.group()
-def testio():
-    pass
+@nnodes.command(name='check-events')
+def nnodes_check_events():
+    from .bin.nnodes_check_events import bin
+    if len(sys.argv) > 3:
+        events = sys.argv[3:]
+    else:
+        events = None
+    bin(events)
 
-@testio.command(name='create-file')
-@click.argument('file', type=str)
-def create_file(file):
-    from pathlib import Path
-    from time import sleep
-
-    sleep(2)
-    Path(file).touch()
-
-
-@testio.command(name='sleep')
-@click.argument('seconds', type=int)
-def sleep(seconds: int):
-    from sys import argv
-    from time import sleep
-    sleep(seconds)
+@nnodes.command(name='events')
+def nnodes_check_events():
+    from .bin.nnodes_events import bin
+    bin()
 
 
-@testio.command(name='check-files')
-@click.argument('filedir', type=str)
-def check_files(filedir):
-    import os
-    from glob import glob
+if __name__ == '__main__':
 
-    # Check files
-    event_ids = glob(os.path.join(filedir,'*'))
-
-    with open('tempfilelist.txt', 'w') as f:
-        for event_id in event_ids:
-            print(os.path.basename(event_id), file=f)
-
-
+    sys.excepthook = mpiabort_excepthook
+    cli()
+    sys.excepthook = sys.__excepthook__

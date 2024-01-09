@@ -95,11 +95,13 @@ def read_synt_all(outdir, wavetype) -> tp.List[obspy.Stream]:
     return synts
 
 
-def forward(outdir, gfm: GFManager):
+def forward(outdir, gfm: GFManager, it=None, ls=None):
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Get dirs
     metadir = os.path.join(outdir, 'meta')

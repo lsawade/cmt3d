@@ -60,11 +60,13 @@ def write_dsdm(dsdm: obspy.Stream, outdir, wavetype, nm, it, ls=None):
     cmt3d.write_pickle(file, dsdm)
 
 
-def read_dsdm(outdir, wavetype, nm, it, ls=None) -> obspy.Stream:
+def read_dsdm(outdir, wavetype, nm, it=None, ls=None) -> obspy.Stream:
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Get the synthetics directory
     dsdmdir = os.path.join(outdir, 'dsdm')
@@ -81,11 +83,13 @@ def read_dsdm(outdir, wavetype, nm, it, ls=None) -> obspy.Stream:
     return cmt3d.read_pickle(file)
 
 
-def kernel(outdir, gfm: GFManager):
+def kernel(outdir, gfm: GFManager, it=None, ls=None):
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Get the meta data directory
     metadir = os.path.join(outdir, 'meta')

@@ -75,11 +75,13 @@ def read_descent(outdir, it, ls=0):
     return np.load(file)
 
 
-def descent(outdir):
+def descent(outdir, it=None, ls=None):
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Define the directories
     metadir = os.path.join(outdir, 'meta')

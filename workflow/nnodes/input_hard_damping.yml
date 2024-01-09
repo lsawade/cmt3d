@@ -1,15 +1,15 @@
 # Inputs. Put full path for safety (~ often isn't recognized by Python)
 #database: /Users/lucassawade/database/nnodes             # Personal
 # database: /scratch/gpfs/lsawade/gcmt/db/nnodes          # Traverse
-database: /gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes # SUMMIT
+database: /lustre/orion/geo111/scratch/lsawade/gcmt/nnodes # SUMMIT
 
 # For creating and grabbing from the observed data
 # datadatabase: /Users/lucassawade/database/data            # Personal
 # datadatabase: /scratch/gpfs/lsawade/gcmt/db/data          # Traverse
-datadatabase: /gpfs/alpine/geo111/scratch/lsawade/gcmt/data # SUMMIT
+datadatabase: /lustre/orion/geo111/scratch/lsawade/gcmt/data # SUMMIT
 
 # Eventstatus directory
-events: /gpfs/alpine/geo111/scratch/lsawade/gcmt/events
+events: /lustre/orion/geo111/scratch/lsawade/gcmt/events
 
 # For the default also the default process parameters are used
 processparams: null

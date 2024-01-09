@@ -120,11 +120,13 @@ def constrain_gradient(outdir, m, g):
 
 
 
-def gradient(outdir):
+def gradient(outdir, it=None, ls=None):
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Get input parameters
     inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))

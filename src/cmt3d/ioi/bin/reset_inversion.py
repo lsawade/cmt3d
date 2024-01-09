@@ -20,12 +20,16 @@ def bin(events, level='inversion'):
             if level=='inversion':
                 print("Resetting:", _task.name)
                 _task.reset()
+                _task.it=0
+                _task.step=0
                 ioi.reset_step(_task.outdir)
                 ioi.reset_iter(_task.outdir)
             elif level=='maybe-invert':
                 if len(_task) == 2:
                     print("Resetting maybe-invert:", _task.name)
                     _task[1].reset()
+                    _task.it=0
+                    _task.step=0
                     ioi.reset_step(_task.outdir)
                     ioi.reset_iter(_task.outdir)
                 else:

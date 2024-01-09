@@ -33,7 +33,10 @@ dependencies = [
     "scipy",
     "obsproclib",
     "obswinlib",
-    "obsplotlib"
+    "obsplotlib",
+    "gf3d",
+    "psutil",
+    "joblib"
 ]
 
 [project.optional-dependencies]

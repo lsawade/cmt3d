@@ -1,10 +1,12 @@
 # %%
 import os
+import sys
 from copy import deepcopy
 import cmt3d
 import obspy
 import obsproclib as oprc
 import obswinlib as owl
+
 
 
 from .constants import Constants
@@ -128,8 +130,31 @@ def process_data_wave_mpi(outdir, wavetype, verbose=True):
         # Get datadir in data database
         ddatadir = os.path.join(datadatabase, eventname)
 
-        # Read data
-        data = obspy.read(os.path.join(ddatadir, 'waveforms', '*.mseed'))
+        # Read data.
+        try:
+            data = obspy.read(os.path.join(ddatadir, 'waveforms', '*.mseed'))
+
+        # Looks like the some downloaded traces sometimes have no data.
+        # The exception will read the traces trace by trace and add them to
+        # to a Stream.
+        except Exception as e:
+
+            print("Error reading data: ", e)
+            from glob import glob
+            tracefiles = glob(os.path.join(ddatadir, 'waveforms', '*.mseed'))
+            data = obspy.Stream()
+
+            for tracefile in tracefiles:
+                try:
+                    data += obspy.read(tracefile)
+                except Exception as e:
+                    print(f"Error reading trace: {tracefile}", e)
+
+            if len(data) < 15:
+                print("Not enough traces, skipping this event")
+                write_log(outdir, "Less than 15 traces, STOP")
+                write_status(outdir, "FAIL: Less than 15 traces")
+                raise ValueError("Less than 15 traces, STOP")
 
         # Read metadata
         stations = cmt3d.read_inventory(os.path.join(metadir, 'stations.xml'))
@@ -180,17 +205,18 @@ def process_data_wave_mpi(outdir, wavetype, verbose=True):
         write_data(pdata, outdir, wavetype)
 
 
-def process_synt(outdir, multiprocesses=1, verbose=True):
+def process_synt(outdir,  it=None, ls=None, multiprocesses=1, verbose=True):
 
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     for wavetype in processdict.keys():
-        process_synt_wave(outdir, wavetype, multiprocesses=multiprocesses,
-                          verbose=verbose)
+        process_synt_wave(outdir, wavetype,  it=it, ls=ls,
+                          multiprocesses=multiprocesses, verbose=verbose)
 
 
-def process_synt_wave(outdir, wavetype, multiprocesses=1, verbose=True):
+def process_synt_wave(outdir, wavetype, it=None, ls=None,
+                      multiprocesses=1, verbose=True):
 
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
@@ -199,8 +225,10 @@ def process_synt_wave(outdir, wavetype, multiprocesses=1, verbose=True):
     reset_cpu_affinity(verbose=True)
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Define directory
     metadir = os.path.join(outdir, 'meta')
@@ -280,7 +308,7 @@ def process_synt_wave(outdir, wavetype, multiprocesses=1, verbose=True):
     write_synt(pdata, outdir, wavetype, it, ls)
 
 
-def process_synt_wave_mpi(outdir, wavetype, verbose=True):
+def process_synt_wave_mpi(outdir, wavetype, it=None, ls=None, verbose=True):
 
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
@@ -295,8 +323,10 @@ def process_synt_wave_mpi(outdir, wavetype, verbose=True):
         processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
         # Get iter,step
-        it = get_iter(outdir)
-        ls = get_step(outdir)
+        if it is None:
+            it = get_iter(outdir)
+        if ls is None:
+            ls = get_step(outdir)
 
         # Define directory
         metadir = os.path.join(outdir, 'meta')
@@ -366,24 +396,27 @@ def process_synt_wave_mpi(outdir, wavetype, verbose=True):
         write_synt(pdata, outdir, wavetype, it, ls)
 
 
-def process_dsdm(outdir, nm, multiprocesses=1, verbose=False):
+def process_dsdm(outdir, nm, it=None, ls=None, multiprocesses=1, verbose=False):
 
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
     for wavetype in processdict.keys():
-        process_dsdm_wave(outdir, nm, wavetype, multiprocesses=multiprocesses,
-                          verbose=verbose)
+        process_dsdm_wave(outdir, nm, wavetype, it=it, ls=ls,
+                          multiprocesses=multiprocesses, verbose=verbose)
 
 
-def process_dsdm_wave(outdir, nm, wavetype, multiprocesses=1, verbose=True):
+def process_dsdm_wave(outdir, nm, wavetype, it=None, ls=None, multiprocesses=1,
+                      verbose=True):
 
     # Reset CPU affinity important for SUMMIT
     reset_cpu_affinity(verbose=verbose)
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Define directory
     metadir = os.path.join(outdir, 'meta')
@@ -467,7 +500,7 @@ def process_dsdm_wave(outdir, nm, wavetype, multiprocesses=1, verbose=True):
     write_dsdm(pdata, outdir, wavetype, nm, it, ls)
 
 
-def process_dsdm_wave_mpi(outdir, nm, wavetype, verbose=True):
+def process_dsdm_wave_mpi(outdir, nm, wavetype, it=None, ls=None, verbose=True):
 
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
@@ -479,8 +512,10 @@ def process_dsdm_wave_mpi(outdir, nm, wavetype, verbose=True):
             print("-> Loading parameters")
 
         # Get iter,step
-        it = get_iter(outdir)
-        ls = get_step(outdir)
+        if it is None:
+            it = get_iter(outdir)
+        if ls is None:
+            ls = get_step(outdir)
 
         # Define directory
         metadir = os.path.join(outdir, 'meta')

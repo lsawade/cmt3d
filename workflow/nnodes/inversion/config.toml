@@ -1,31 +1,35 @@
 [job]
-system = [ "nnodes.job", "Summit",]
+system = [ "nnodes.job", "Andes",]
 name = "Inversion Set"
-nnodes = 50
+nnodes = 12
 account = "GEO111"
-walltime = 150.0
+walltime = 240.0
 gap = 10.0
 debug = false
 node_splittable = true
 
 [root]
-task = ["cmt3d.ioi.nnodes.inversion", "main",]
-inputfile = "/ccs/home/lsawade/gcmt/cmt3d/workflow/nnodes/input.yml"
+ task = ["cmt3d.ioi.nnodes.inversion", "main",]
+inputfile = "/ccs/home/lsawade/gcmt_andes/cmt3d/workflow/nnodes/input.yml"
 # inputfile = "/ccs/home/lsawade/gcmt/cmt3d/workflow/nnodes/input_hard_damping.yml"
 # inputfile = "/ccs/home/lsawade/gcmt/cmt3d/workflow/nnodes/input_fix_depth_10.yml"
-# eventid = "B010896B"
+# eventid = "B030501D"
 # start_index = 0
 # end_index = 10
 # max_conc = 10
-subset_max_conc = 5 # max number of subsets to get simultaneously
-start_index = 238
-end_index = 288
+subset_max_conc = 8 # max number of subsets to get simultaneously
+inversion_max_conc = 40 # max number of subsets to get simultaneously
+start_index = 938
+end_index = 942
 redo = true
-redo_keep_subset = true
-dbname = "/gpfs/alpine/geo111/scratch/lsawade/DB/GLAD-M25/128_single"
+redo_keep_subset = false
+dbname = "/lustre/orion/geo111/scratch/lsawade/DB/GLAD-M25/128_single"
 db_is_local = true
 # Multiprocesses: Number of cores to use for the processing
 backend= 'mpi' #['multiprocessing', 'mpi']
 process_nproc = 6
 window_nproc = 15
 save_interval = 60
+retry_delay = 10
+default_retry = 1
+eventchecksleep = 120

@@ -60,11 +60,13 @@ def constrain_model(outdir, m):
     return m
 
 
-def update_model(outdir):
+def update_model(outdir, it=None, ls=None):
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Read model, descent direction, and optvals (alpha)
     m = read_model(outdir, it, 0)
@@ -84,11 +86,13 @@ def update_model(outdir):
         outdir, f"      m: {np.array2string(m_new, max_line_width=int(1e10))}")
 
 
-def update_mcgh(outdir):
+def update_mcgh(outdir, it=None, ls=None):
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Read input params
     processparams = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
@@ -136,10 +140,11 @@ def check_status(statdir):
         return True
 
 
-def check_done(outdir):
+def check_done(outdir, it=None):
 
     # Get iter,step
-    it = get_iter(outdir)
+    if it is None:
+        it = get_iter(outdir)
     # ls = get_step(outdir)
 
     # Read input parameters and optimization characteristics

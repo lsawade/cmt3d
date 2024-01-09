@@ -128,14 +128,14 @@ def plot_cm(cmts, costs, mpar='depth_in_m'):
 
 # %%
 
-dbdir = "/gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes"
+dbdir = "/lustre/orion/geo111/scratch/lsawade/gcmt/nnodes"
 outdirs = os.listdir(dbdir)
 
 for od in outdirs:
     # Skip all events except B010896B,B010202D
     # if "B010896B" not in od:
     #     continue
-    if "B011696A" not in od:
+    if "B021896E" not in od:
         continue
 
     # Get absolute directory
@@ -143,27 +143,28 @@ for od in outdirs:
 
     cmts = read_all_cmt(_od)
     en = cmts[0][0].eventname
-    costs = read_all_cost(_od)
+    # costs = read_all_cost(_od)
 
-    try:
-        plt.close('all')
-        history(cmts, costs)
-        plt.savefig(f"history/{en}_history.png", dpi=300)
-    except Exception as e:
-        print(f"{cmts[0][0].eventname} - m/c:", e)
-        pass
+    # try:
+    #     plt.close('all')
+    #     history(cmts, costs)
+    #     plt.savefig(f"history/{en}_history.png", dpi=300)
+    # except Exception as e:
+    #     print(f"{cmts[0][0].eventname} - m/c:", e)
+    #     pass
 
-    try:
-        plt.close('all')
-        component = "Z"
-        for wave in ['body', 'surface', 'mantle']:
-            plot_inversion_section(_od, wave, windows=False,
-                                   component=component)
+    # try:
+    plt.close('all')
+    component = "Z"
+    for wave in ['body', 'surface', 'mantle']:
+        plot_inversion_section(_od, wave, windows=False,
+                                component=component)
 
-            if not os.path.exists(f"section/{cmts[0][0].eventname}"):
-                os.makedirs(f"section/{cmts[0][0].eventname}")
+        if not os.path.exists(f"section/{cmts[0][0].eventname}"):
+            os.makedirs(f"section/{cmts[0][0].eventname}")
 
-            plt.savefig(
-                f"section/{cmts[0][0].eventname}/{wave}_{component}.pdf", dpi=300)
-    except Exception as e:
-        print(f"{cmts[0][0].eventname} - section:", e)
+        plt.savefig(
+            f"section/{cmts[0][0].eventname}/{wave}_{component}.pdf", dpi=300)
+    # except Exception as e:
+    #     print(f"{cmts[0][0].eventname} - section:", e)
+

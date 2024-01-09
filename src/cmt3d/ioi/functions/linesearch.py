@@ -73,11 +73,13 @@ def read_optvals(outdir, it, ls=None):
     return optvals
 
 
-def check_optvals(outdir, status=True):
+def check_optvals(outdir, status=True, it=None, ls=None):
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Read inputparams
     inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
@@ -92,6 +94,11 @@ def check_optvals(outdir, status=True):
             write_status(
                 outdir,
                 f"FAIL: NOT A DESCENT DIRECTION at it {it:05d} and ls {ls:05d}.")
+
+            write_log(outdir,
+                      f"---> FAIL at it {it:05d} and ls {ls:05d}. Not a descent direction."
+                      f"nls = {ls}, wolfe1 = {w1} wolfe2 = {w2}, "
+                      f"a={alpha}, al={alpha_l}, ar={alpha_r}")
 
         return "FAIL"
 
@@ -109,7 +116,7 @@ def check_optvals(outdir, status=True):
                       f"f/fo={cost/initcost:5.4e}, "
                       f"nls = {ls}, wolfe1 = {w1} wolfe2 = {w2}, "
                       f"a={alpha}, al={alpha_l}, ar={alpha_r}")
-
+            write_log(outdir, "SUCCESS.")
             write_status(
                 outdir,
                 f"SUCCESS: it {it:05d} and ls {ls:05d}.")
@@ -127,6 +134,11 @@ def check_optvals(outdir, status=True):
                 outdir,
                 f"FAIL: LS ENDED at it {it:05d} and ls {ls:05d}.")
 
+            write_log(outdir,
+                      f"---> FAIL at it {it:05d} and ls {ls:05d} max NLS reached."
+                      f"nls = {ls}, wolfe1 = {w1} wolfe2 = {w2}, "
+                      f"a={alpha}, al={alpha_l}, ar={alpha_r}")
+
         return "FAIL"
 
     # None of it failed add step flag
@@ -136,16 +148,23 @@ def check_optvals(outdir, status=True):
                 outdir,
                 f"ADDSTEP: it {it:05d} and ls {ls:05d}.")
 
+            write_log(outdir,
+                      f"---> ADDSTEP = {ls:05d}, "
+                      f"nls = {ls}, wolfe1 = {w1} wolfe2 = {w2}, "
+                      f"a={alpha}, al={alpha_l}, ar={alpha_r}")
+
         return "ADDSTEP"
 
     return True
 
 
-def linesearch(outdir):
+def linesearch(outdir, it=None, ls=None):
 
     # Get iter,step
-    it = get_iter(outdir)
-    ls = get_step(outdir)
+    if it is None:
+        it = get_iter(outdir)
+    if ls is None:
+        ls = get_step(outdir)
 
     # Get the model update and grad
     dm = read_descent(outdir, it, 0)

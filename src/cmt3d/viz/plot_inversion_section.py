@@ -1,5 +1,6 @@
 
 import os
+import numpy as np
 import obsplotlib.plot as opl
 import cmt3d
 import cmt3d.ioi as ioi
@@ -16,6 +17,8 @@ def plot_inversion_section(outdir, wtype, windows: bool, component='Z'):
     # Load the data
     data = ioi.read_data_windowed(outdir, wtype)
 
+    print(data)
+
     # Read metadata
     stations = cmt3d.read_inventory(os.path.join(outdir, 'meta',
                                                  'stations.xml'))
@@ -24,8 +27,10 @@ def plot_inversion_section(outdir, wtype, windows: bool, component='Z'):
     modls = ioi.read_model_all(outdir)
     cmts = ioi.get_cmt_all(outdir)
     costs = ioi.read_cost_all(outdir)
-    grads = ioi.read_gradient_all(outdir)
-    hesss = ioi.read_hessian_all(outdir)
+    if len(costs) == 0:
+        costs = [np.inf]
+    # grads = ioi.read_gradient_all(outdir)
+    # hesss = ioi.read_hessian_all(outdir)
 
     # Get initial CMT
     cmt0 = cmts[0]
@@ -33,22 +38,31 @@ def plot_inversion_section(outdir, wtype, windows: bool, component='Z'):
     # Read synthetics
     synts = ioi.read_synt_all(outdir, wtype)
 
+    print(synts[0])
+
     # Attach geometry
     opl.attach_geometry(data, cmt0.latitude, cmt0.longitude, stations)
     opl.copy_geometry(data, synts)
 
     # Filter windows
     synt_labels = [f"C: {_c:.4f}" for _c in costs]
-    data, synts = make_plot_windows(data, synts, synt_labels)
+
+    if costs[-1] == np.inf:
+        pass
+    else:
+        data, synts = make_plot_windows(data, synts, synt_labels)
 
     # Get intersection
     pstreams = opl.select_intersection([data, *synts], components=component)
+
+    print(pstreams[0])
+    print(pstreams[1])
 
     if wtype == 'body':
         scale = 10.0
         size = (10, 8)
     else:
-        scale = 1.0
+        scale = 50.0
         size = (10, 8)
 
     # Plot section

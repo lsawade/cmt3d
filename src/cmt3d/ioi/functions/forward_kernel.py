@@ -27,10 +27,10 @@ def mpiabort_excepthook(type, value, traceback):
     time.sleep(1.0)
     import mpi4py.MPI
     mpi_comm = mpi4py.MPI.COMM_WORLD
-    mpi_comm.Abort()
+    mpi_comm.Abort(1)
 
 
-def forward_kernel(outdir):
+def forward_kernel(outdir, it=None, ls=None):
 
     # Set abort hook on all ranks.
     sys.excepthook = mpiabort_excepthook
@@ -69,8 +69,10 @@ def forward_kernel(outdir):
     if rank == 0:
 
         # Get iter,step
-        it = get_iter(outdir)
-        ls = get_step(outdir)
+        if it is None:
+            it = get_iter(outdir)
+        if ls is None:
+            ls = get_step(outdir)
 
         # Get the meta data directory
         metadir = os.path.join(outdir, 'meta')
@@ -259,6 +261,8 @@ def forward_kernel(outdir):
             write_dsdm_raw(drp, outdir, idx)
 
     comm.barrier()
+
+    print(rank, size, par, pert, sr_rank, flush=True)
 
 
 if __name__ == "__main__":
