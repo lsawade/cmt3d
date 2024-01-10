@@ -1,7 +1,7 @@
 [job]
 system = [ "nnodes.job", "Andes",]
 name = "Inversion Set"
-nnodes = 12
+nnodes = 5
 account = "GEO111"
 walltime = 240.0
 gap = 10.0
@@ -22,14 +22,14 @@ inversion_max_conc = 40 # max number of subsets to get simultaneously
 start_index = 938
 end_index = 942
 redo = true
-redo_keep_subset = false
+redo_keep_subset = true
 dbname = "/lustre/orion/geo111/scratch/lsawade/DB/GLAD-M25/128_single"
 db_is_local = true
 # Multiprocesses: Number of cores to use for the processing
 backend= 'mpi' #['multiprocessing', 'mpi']
-process_nproc = 6
-window_nproc = 15
-save_interval = 60
+process_nproc = 10
+window_nproc = 20
+# save_interval = 60
 retry_delay = 10
 default_retry = 1
-eventchecksleep = 120
+eventchecksleep = 10

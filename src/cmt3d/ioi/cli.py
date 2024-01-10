@@ -72,13 +72,13 @@ def forward_kernel_mpi(outdir: str, it=None, ls=None):
               type=int)
 @click.option('--ls', show_default=True, default=None, help='step      #',
               type=int)
-@click.option('--verbose', is_flag=True, show_default=True, default=True,
+@click.option('--verbose', is_flag=True, show_default=True, default=False,
               help='verbose    ', type=bool)
 @click.option('--cgh-only', is_flag=True, show_default=True, default=False,
               help='only compute cgh    ', type=bool)
 @click.option('--fw-only', is_flag=True, show_default=True, default=False,
               help='only forward modeling    ', type=bool)
-def step_mfpcghc(outdir: str, it=None, ls=None, verbose=False,
+def step_mfpcghlc(outdir: str, it=None, ls=None, verbose=False,
                  cgh_only=False, fw_only=False):
 
     from mpi4py import MPI
@@ -88,20 +88,21 @@ def step_mfpcghc(outdir: str, it=None, ls=None, verbose=False,
         mpi_comm.Abort(1)
         sys.__excepthook__(type, value, traceback)
 
-    from .functions.step_mfpcghc import \
-        model_update, forward_kernel, process_all_synt, cghc
+    from .functions.step_mfpcghlc import \
+        model_update, forward_kernel, process_all_synt, cghlc
 
     sys.excepthook = mpiabort_excepthook
 
     if not cgh_only and not fw_only:
         model_update(outdir, it=it, ls=ls)
-
+    mpi_comm.barrier()
     if not cgh_only:
-        forward_kernel(outdir, it=it, ls=ls)
+        forward_kernel(outdir, it=it, ls=ls, verbose=verbose)
+        mpi_comm.barrier()
         process_all_synt(outdir, it=it, ls=ls, verbose=verbose)
-
+    mpi_comm.barrier()
     if not fw_only:
-        cghc(outdir, it=it, ls=ls, cgh_only=cgh_only, verbose=verbose)
+        cghlc(outdir, it=it, ls=ls, cgh_only=cgh_only, verbose=verbose)
 
     sys.excepthook = sys.__excepthook__
 

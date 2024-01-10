@@ -62,7 +62,7 @@ def plot_inversion_section(outdir, wtype, windows: bool, component='Z'):
         scale = 10.0
         size = (10, 8)
     else:
-        scale = 50.0
+        scale = 1.0
         size = (10, 8)
 
     # Plot section
