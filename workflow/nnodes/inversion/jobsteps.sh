@@ -1,7 +1,8 @@
 #!/bin/bash
 
 JOBID=$1
+format="JobID%20,ReqCPUS,TotalCPU,Elapsed,NodeList%30,State"
 
-sacct -j $JOBID -o "User,JobID%20,ReqMem,ReqCPUS,TotalCPU,Elapsed,MaxRSS,NodeList%30,State" | grep RUNNING | head
+sacct -j $JOBID -o $format | grep RUNNING | head
 echo "     :            :              :                 :             "
-sacct -j $JOBID -o "User,JobID%20,ReqMem,ReqCPUS,TotalCPU,Elapsed,MaxRSS,NodeList%30,State" | grep RUNNING | tail
+sacct -j $JOBID -o $format | grep RUNNING | tail

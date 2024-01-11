@@ -241,6 +241,8 @@ def process_synt_wave(outdir, wavetype, it=None, ls=None,
     # Read data
     synt = read_synt_raw(outdir)
 
+    print("Number of traces", len(synt))
+
     # Read metadata
     stations = cmt3d.read_inventory(os.path.join(metadir, 'stations.xml'))
 
@@ -432,11 +434,9 @@ def process_dsdm_wave(outdir, nm, wavetype, it=None, ls=None, multiprocesses=1,
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
-    # Read data
-    if mname in Constants.nosimpars:
-        synt = read_synt_raw(outdir)
-    else:
-        synt = read_dsdm_raw(outdir, nm)
+    # Read data (I used to load the time one here from the synthetic one,
+    # but that is over now!)
+    synt = read_dsdm_raw(outdir, nm)
 
     # Read metadata
     stations = cmt3d.read_inventory(os.path.join(metadir, 'stations.xml'))
@@ -531,11 +531,9 @@ def process_dsdm_wave_mpi(outdir, nm, wavetype, it=None, ls=None, verbose=True):
         # Get processing parameters
         processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
-        # Read data
-        if mname in Constants.nosimpars:
-            synt = read_synt_raw(outdir)
-        else:
-            synt = read_dsdm_raw(outdir, nm)
+        # Read data (I used to load the time one here from the synthetic one,
+        # but that is over now!)
+        synt = read_dsdm_raw(outdir, nm)
 
         # Read metadata
         stations = cmt3d.read_inventory(os.path.join(metadir, 'stations.xml'))

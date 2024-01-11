@@ -7,6 +7,8 @@ All functions to compute a full linsearch step for the MFPCGH method.
 - [C]ost computation
 - [G]radient computation
 - [H]essian computation
+- [L]inesearch
+- [C]heck optvals
 
 
 """
@@ -19,7 +21,7 @@ import time
 import cmt3d
 from copy import deepcopy
 import numpy as np
-from obsproclib import process_stream
+from obsproclib import process_stream, stream_multiply
 from mpi4py import MPI
 from .kernel import write_dsdm, read_dsdm_raw
 from .forward import write_synt, read_synt_raw
@@ -44,9 +46,9 @@ from .constants import Constants
 from .log import get_iter, get_step, write_log
 from .utils import cmt3d2gf3d
 from .opt import update_model
-from .cost import cost, write_cost
-from .gradient import gradient, write_gradient, constrain_gradient
-from .hessian import hessian, write_hessian
+from .cost import cost
+from .gradient import gradient
+from .hessian import hessian
 from ...costgradhess import CostGradHess
 from ...source import CMTSource
 from ... import read_inventory
@@ -202,7 +204,6 @@ def forward_kernel(outdir, it=None, ls=None, verbose=True):
 
         # Adding the
         missing_cores = size - len(rankmap)
-        print(size, len(rankmap), missing_cores, flush=True)
         rankmap += [[None, None, None, None],] * missing_cores
 
     else:
@@ -227,11 +228,12 @@ def forward_kernel(outdir, it=None, ls=None, verbose=True):
 
     # Make the cmt solutions GF3D obsjects.
     tcmp = rankmap[0]
-    if tcmp is not None:
-        cmt = cmt3d2gf3d(rankmap[0])
     par = rankmap[1]
     pert = rankmap[2]
     sr_rank = rankmap[3]
+
+    if tcmp is not None:
+        cmt = cmt3d2gf3d(rankmap[0])
 
     print(rank, size, par, pert, sr_rank, flush=True)
 
@@ -385,6 +387,7 @@ def process_all_synt(outdir, it=None, ls=None, verbose=True):
 
         for wave in processdict.keys():
             for synt in syntlist:
+                print(wave, synt)
                 processing_list.append([wave, synt])
 
         extra_cores =  size - len(processing_list)
@@ -420,6 +423,7 @@ def process_all_synt(outdir, it=None, ls=None, verbose=True):
     processdict = comm.bcast(processdict, root=0)
     stations = comm.bcast(stations, root=0)
     processing_list = comm.scatter(processing_list, root=0)
+    mnames = comm.bcast(mnames, root=0)
 
     # Unpack
     print(rank, size, processing_list, flush=True)
@@ -468,6 +472,9 @@ def process_all_synt(outdir, it=None, ls=None, verbose=True):
 
         # Process the synthetics
         dsdm = process_stream(dsdm, **tprocessdict)
+
+        if mnames[param] == "depth_in_m":
+            stream_multiply(dsdm, 1.0/1000.0)
 
         # Write the synthetics
         write_dsdm(dsdm, outdir, wave, param, it, ls)
@@ -537,120 +544,22 @@ def cghlc(outdir, it=None, ls=None, cgh_only=False, verbose=True):
 
     # Compute total cost
     if rank==0:
-
-        cost = 0.0
-        for _wtype in processparams.keys():
-
-            data = read_data_windowed(outdir, _wtype)
-            synt = read_synt(outdir, _wtype, it, ls)
-
-            cgh = CostGradHess(
-                data=data,
-                synt=synt,
-                verbose=False,
-                normalize=normalize,
-                weight=weighting)
-
-            if weighting:
-                cost += cgh.cost() * processparams[_wtype]["weight"]
-            else:
-                cost += cgh.cost()
-
-        write_cost(cost, outdir, it, ls)
+        cost(outdir, it=it, ls=ls)
 
     if rank==1:
-
-        # Compute total cost
-        grad = np.zeros(NM)
-
-        for _wtype in processparams.keys():
-
-            data = read_data_windowed(outdir, _wtype)
-            synt = read_synt(outdir, _wtype, it, ls)
-
-            # Read model to check whether to constrain
-            m = read_model(outdir, it, ls)
-
-            # Get all frechet derivatives
-            dsyn = list()
-            for _i in range(NM):
-                dsyn.append(read_dsdm(outdir, _wtype, _i, it, ls))
-
-            # Create CostGradHess object
-            cgh = CostGradHess(
-                data=data,
-                synt=synt,
-                dsyn=dsyn,
-                verbose=False,
-                normalize=normalize,
-                weight=weighting)
-
-            if weighting:
-                grad += cgh.grad() * processparams[_wtype]["weight"]
-            else:
-                grad += cgh.grad()
-
-            # Check constraints, given the parameters gradient may or may not be
-            # set to 0
-            grad = constrain_gradient(outdir, m, grad)
-
-            # Write Gradients
-            write_gradient(grad, outdir, it, ls)
+        gradient(outdir, it=it, ls=ls)
 
     if rank==2:
+        hessian(outdir, it=it, ls=ls)
 
-        # Compute total cost
-        hess = np.zeros((NM, NM))
-
-        for _wtype in processparams.keys():
-
-            data = read_data_windowed(outdir, _wtype)
-            synt = read_synt(outdir, _wtype, it, ls)
-
-            # Get all frechet derivatives
-            dsyn = list()
-            for _i in range(NM):
-                dsyn.append(read_dsdm(outdir, _wtype, _i, it, ls))
-
-            # Create CostGradHess object
-            cgh = CostGradHess(
-                data=data,
-                synt=synt,
-                dsyn=dsyn,
-                verbose=False,
-                normalize=normalize,
-                weight=weighting)
-
-            if weighting:
-                hess += cgh.hess() * processparams[_wtype]["weight"]
-            else:
-                hess += cgh.hess()
-
-        # Write Gradients
-        write_hessian(hess, outdir, it, ls)
-
-    # After computing cost, grad and hess, we need to wait for all ranks to
-    # finish
     comm.barrier()
-
-    # Then we write the cost and gradient to the log file on after the other
-    for i in range(3):
-
-        if rank==0 and i==0:
-            write_log(
-                outdir, f"      c: {np.array2string(cost, max_line_width=int(1e10))}")
-
-        if rank==1 and i==1:
-            write_log(
-                outdir, f"      g: {np.array2string(grad, max_line_width=int(1e10))}")
-
-        # Wait for cost, grad and hess to be computed
-        comm.barrier()
 
     # Read model names
     if rank==0 and not cgh_only:
+
         linesearch(outdir, it=it, ls=ls)
-        check_optvals(outdir, status=True, it=it, ls=ls)
+
+        # check_optvals(outdir, status=True, it=it, ls=ls)
 
     comm.barrier()
 

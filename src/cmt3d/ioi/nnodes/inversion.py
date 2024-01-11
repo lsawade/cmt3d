@@ -21,6 +21,7 @@ def main(node: Node):
 
     # Get todo events
     event_dir = inputparams['events']
+    db_dir = inputparams['database']
 
     if node.eventid is not None:
         print("Getting specific event...")
@@ -50,6 +51,15 @@ def main(node: Node):
         if node.start_index:
             print(f"Getting events from idx {node.start_index} ...")
             events = events[node.start_index:]
+
+    # if redo, remove INIT files
+    if node.redo or node.redo_keep_subset:
+        # Remove INIT files
+        for event in events:
+            name = os.path.basename(event)
+            initpath = os.path.join(db_dir, name, 'INIT.txt')
+            print(f"Removing {initpath}")
+            node.rm(os.path.join(initpath))
 
     node.add(create_dirs_and_subsets, events=events, name='Subset-Events', concurrent=False)
     node.add(eventloop, events=events, name='Event-Loop', concurrent=True)
@@ -122,18 +132,22 @@ def create_dir_and_subset(node: Node):
         command = f"cmt3d-ioi create {node.eventfile} {node.inputfile}"
         node.add_mpi(command, name=f"Create-Inv-dir", cwd=node.log,
                      exec_args={Slurm: '-N1 --time=5'},
-                     nprocs=1, timeout=60*6, retry=3)
+                     nprocs=1, cpus_per_proc=3, timeout=60*6, retry=3)
 
         # Load Green function
         if not os.path.exists(os.path.join(node.outdir, 'meta', 'subset.h5')):
             node.add(get_subset)
 
-        node.add_mpi(f'touch {node.outdir}/INIT.txt', cwd=node.log,
-                     name=f'INIT-{os.path.basename(node.outdir)}',
-                     exec_args={Slurm: '-N1 --time=5'},
-                     nprocs=1, timeout=60*6, retry=3)
+        node.add(f'touch {node.outdir}/INIT.txt',
+                 name=f'INIT-{os.path.basename(node.outdir)}',
+                 timeout=60*6, retry=3)
 
-
+def stop_event_after_fail(node):
+    """Stops the parent inversion node after failing,
+    and removes the event from the list of events to be run."""
+    pass
+    # if node.parent.name == 'eventloop':
+    #     node.
 
 def eventloop(node: Node):
 
@@ -156,12 +170,12 @@ def eventcheck(node: Node):
     # Loop over events
     for _i, _event in enumerate(events):
 
-        # # Check how many nodes are in the event loop that are to be run
-        # N_notdone = sum([_n.done==False for _n in node.parent])
+        # Check how many nodes are in the event loop that are to be run
+        N_notdone = sum([_n.done==False for _n in node.parent])
 
-        # # If number larger than max, break
-        # if N_notdone + 1 >= node.inversion_max_conc:
-        #     break
+        # If number larger than max, break
+        if N_notdone + 1 >= node.inversion_max_conc:
+            break
 
         # Get even name and and outfile
         eventname = os.path.basename(_event)
@@ -223,9 +237,35 @@ def update_parent(node: Node):
 def cmtinversion(node: Node):
     # node.write(20 * "=", mode='a')
 
-    node.add(preprocess, concurrent=False)
+    # Read model and model name
+    mnames = ioi.read_model_names(node.outdir)
 
-    node.add(maybe_invert, concurrent=False)
+    # Get number of processes required for kernel evaluation
+    fw_kernel_sim_nproc = 0
+    for _mname in mnames:
+        if _mname in ioi.Constants.locations:
+            fw_kernel_sim_nproc += 2
+        else:
+            fw_kernel_sim_nproc += 1
+
+    # Get the frechet derivatives
+    NM = len(mnames)
+
+    # Get parameters
+    NW = len(cmt3d.read_yaml(os.path.join(node.outdir, 'process.yml')).keys())
+
+    # Processes required for forward and kernel processing
+    kernel_proc_nproc = NW*(NM+1)
+
+    # Get number of processes required for processing
+    if kernel_proc_nproc > fw_kernel_sim_nproc:
+        step_nproc = kernel_proc_nproc
+    else:
+        step_nproc = fw_kernel_sim_nproc
+
+    node.add(preprocess, concurrent=False, step_nproc=step_nproc)
+
+    node.add(maybe_invert, concurrent=False, step_nproc=step_nproc)
 
 
 def maybe_invert(node: Node):
@@ -242,6 +282,10 @@ def maybe_invert(node: Node):
 
         # Cost, Grad, Hess
         node.add(compute_cgh, concurrent=True)
+        # node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose --cgh-only {node.outdir}',
+        #              name=f'Cost-Grad-Hess-#{node.it:03d}-ls#{node.step:03d}',
+        #              nprocs=3, cwd=node.log, timeout=60*6, retry=3,
+        #              exec_args={Slurm: '-N1 --time=5'},)
 
         # Adding the first iteration!
         node.add(iteration, concurrent=False, name=f'Iteration-#{node.it:03d}')
@@ -252,12 +296,10 @@ def preprocess(node: Node):
         # Get data
         # node.add(ioi.get_data, args=(node.outdir,))
 
-        # Forward and frechet modeling
+        # Forward model and process data and synthetics.
         node.add(forward_frechet_mpi)
-
-        # Process the data and the synthetics
-        node.add(process_all, name='process-all', cwd=node.log,
-                 concurrent=True)
+        node.add(process_all, name='Process-All',
+                 cwd=node.log, concurrent=True)
 
         # Windowing
         node.add(window, name='window', concurrent=True)
@@ -292,31 +334,26 @@ def iteration(node: Node):
 def linesearch(node):
     node.add(search_step, concurrent=False, name=f'Line-Search-#{node.step:03d}')
 
-def check_print(node):
-    node.add(f'echo "Check child  -- search step {node.no:02d} -- {node.it} {node.step}"')
-
-def check_print_parent(node):
-    node.add(f'echo "Check parent -- search step {node.no:02d} -- {node.it} {node.parent.parent.parent.step}"')
-
 def search_step(node):
     # Update the overall inversion parameters (Note that it's necessary)
     #    lines  iter
     node.parent.parent.step = node.step + 1
-    # node.parent.parent.parent.parent.step = node.step + 1
-    node.add_mpi(f"cmt3d-ioi update-step {node.outdir}", name='Update-Step',
-                 exec_args={Slurm: '-N1 --time=1'},
-                 nprocs=1, cwd=node.log, timeout=120, retry=3)
-    # node.step = node.step + 1
-    # Update iteration for iteration check
-    node.add_mpi(f"cmt3d-ioi model update --it {node.it} --ls {node.step} {node.outdir}",
-                 exec_args={Slurm: '-N1 --time=1'},
-                 name='Update-Model', nprocs=1, cwd=node.log, timeout=120, retry=3)
+
+    # node.add(f"cmt3d-ioi update-step --it {node}{node.outdir}", name='Update-Step')
+    node.add(f"cmt3d-ioi model update --it {node.it} --ls {node.step} {node.outdir}", name='Update-Model')
     node.add(forward_frechet_mpi)
-    node.add(process_synt_and_dsdm, concurrent=True)
-    node.add(compute_cgh, concurrent=True)
-    node.add_mpi(f"cmt3d-ioi linesearch --it {node.it} --ls {node.step} {node.outdir}",
-                 exec_args={Slurm: '-N1 --time=1'},
-                 name="Compute-Optvals", nprocs=1, cwd=node.log, timeout=120, retry=3)
+    node.add(process_synt_and_dsdm)
+    node.add(compute_cgh)
+    node.add(f"cmt3d-ioi linesearch --it {node.it} --ls {node.step} {node.outdir}",
+             name="Compute-Optvals")
+    # node.add(search_check)
+
+    # Forward modeling and processing
+    # node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose {node.outdir}',
+    #              nprocs=node.step_nproc, cwd=node.log, timeout=60*6, retry=3,
+    #              name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
+    #              exec_args={Slurm: '--nodes=1-4 --time=5'},)
+
     node.add(search_check, concurrent=False)
 
 # -------------------
@@ -349,6 +386,8 @@ def forward_frechet_mpi(node: Node):
                  timeout=60*6, retry=3)
 
 
+
+
 def forward(node: Node):
     ioi.forward(node.outdir, GFM_CACHE[node.eventname])
 
@@ -377,6 +416,10 @@ def get_subset(node: Node):
 
 def process_all(node: Node):
     node.add(process_data, concurrent=True)
+    # node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose --fw-only {node.outdir}',
+    #                  nprocs=node.step_nproc, cwd=node.log, timeout=60*6, retry=3,
+    #                  name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
+    #                  exec_args={Slurm: '--nodes=1-4 --time=5'},)
     node.add(process_synthetics, concurrent=True)
     node.add(process_dsdm, concurrent=True)
 
@@ -590,26 +633,9 @@ def iteration_check(node: Node):
 
     elif flag == "SUCCESS":
         if ioi.check_done(node.outdir) is False:
-            node.add_mpi(f"cmt3d-ioi update-iter {node.outdir}",
-                         name="Update-iter", nprocs=1, cwd=node.log,
-                         timeout=60*2, retry=3, exec_args={Slurm: '-N1 --time=1'})
-            node.add_mpi(f"cmt3d-ioi reset-step {node.outdir}",
-                         name="Reset-step", nprocs=1, cwd=node.log,
-                         timeout=60*2, retry=3, exec_args={Slurm: '-N1 --time=1'})
             node.parent.parent.add(iteration, it=node.it + 1, step=0,
                                    name=f'Iteration-#{node.it+1:03d}')
-
-            # Update the overall inversion parameters
-            #    iter   maybei cmti
-            node.parent.parent.parent.it = node.it + 1
-            node.parent.parent.parent.step = 0
         else:
-            node.add_mpi(f"cmt3d-ioi update-iter {node.outdir}",name="Update-iter",
-                         nprocs=1, cwd=node.log, timeout=60*2, retry=3,
-                         exec_args={Slurm: '-N1 --time=1'})
-            node.add_mpi(f"cmt3d-ioi reset-step {node.outdir}", name="Reset-step",
-                         nprocs=1, cwd=node.log, timeout=60*2, retry=3,
-                         exec_args={Slurm: '-N1 --time=1'})
             node.rm(os.path.join(node.outdir, 'meta', 'subset.h5'))
 
 

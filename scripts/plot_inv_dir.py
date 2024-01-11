@@ -135,7 +135,7 @@ for od in outdirs:
     # Skip all events except B010896B,B010202D
     # if "B010896B" not in od:
     #     continue
-    if "B070897C" not in od and "B070895G" not in od and  "B070895D" not in od and "B070895A" not in od:
+    if "B070895A" not in od:
         continue
 
     # Get absolute directory
@@ -167,4 +167,5 @@ for od in outdirs:
     #             f"section/{cmts[0][0].eventname}/{wave}_{component}.pdf", dpi=300)
     # except Exception as e:
     #     print(f"{cmts[0][0].eventname} - section:", e)
+
 

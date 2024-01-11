@@ -1,10 +1,11 @@
 #!/bin/bash
 # Begin LSF Directives
 #SBATCH -A GEO111
-#SBATCH -t 04:00:00
-#SBATCH -N 10
+#SBATCH -t 03:00:00
+#SBATCH -N 20
 #SBATCH -J Inversion
 #SBATCH --mem=0
+#SBATCH --requeue
 #SBATCH --output=R-%x.%j.o.txt
 #SBATCH --error=R-%x.%j.e.txt
 #SBATCH --mail-type=end

@@ -58,10 +58,10 @@ parameters:
     pert: 10.0
   latitude:
     scale: 0.1
-    pert: 0.001
+    pert: 0.01
   longitude:
     scale: 0.1
-    pert: 0.001
+    pert: 0.01
   time_shift:
     scale: 1.0
     pert: null
@@ -87,7 +87,7 @@ parameters:
 
 optimization:
   # Regularization fraction of absmax of the Gauss-Newton Hessian
-  damping: 0.001
+  damping: 0.002
 
   # Max iterations
   niter_max: 10

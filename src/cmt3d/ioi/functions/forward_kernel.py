@@ -203,7 +203,7 @@ def forward_kernel(outdir, it=None, ls=None):
     elif par == 'time_shift':
 
         # If the parameter is timeshift we need to compute the gradient
-        # and the multply by -1
+        # and the multiply by -1
         # Take the gradient
         data = np.gradient(data, MS.header['dt'], axis=2)
         drp = MS.get_stream(cmt, data*-1)
