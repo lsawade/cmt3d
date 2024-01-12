@@ -27,7 +27,10 @@ gcmt_cmt3d = CompareCatalogs(old=gcmt____cat, new=cmt3d___cat,
                          oldlabel='GCMT', newlabel='CMT3D',
                          nbins=25)
 gcmt_gcmt3df = CompareCatalogs(old=gcmt____cat, new=gcmt3df_cat,
-                         oldlabel='GCMT', newlabel='GCMT3D',
+                         oldlabel='GCMT', newlabel='CMT3D+',
+                         nbins=25)
+cmt3d_gcmt3df = CompareCatalogs(old=cmt3d___cat, new=gcmt3df_cat,
+                         oldlabel='CMT3D', newlabel='CMT3D+',
                          nbins=25)
 
 # %%
@@ -37,4 +40,6 @@ if not os.path.exists('plots'):
 gcmt_cmt3d.plot_summary(outfile=os.path.join(
         'plots', "gcmt_cmt3d_comparison.pdf"))
 gcmt_gcmt3df.plot_summary(outfile=os.path.join(
-        'plots', "gcmt_gcmt3d_comparison.pdf"))
+        'plots', "gcmt_cmt3d+_comparison.pdf"))
+gcmt_gcmt3df.plot_summary(outfile=os.path.join(
+        'plots', "cmt3d_cmt3d+_comparison.pdf"))

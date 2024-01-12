@@ -133,18 +133,27 @@ outdirs = os.listdir(dbdir)
 
 for od in outdirs:
     # Skip all events except B010896B,B010202D
-    # if "B010896B" not in od:
-    #     continue
-    if "B070895A" not in od:
+    if "B021298F" not in od:
         continue
+
+
 
     # Get absolute directory
     _od = os.path.join(dbdir, od)
 
+    # try:
+    #     if "SMALLWIN" not in ioi.read_status(_od):
+    #         continue
+    # except:
+    #     continue
+
+    print(od)
+
+
     cmts = read_all_cmt(_od)
     en = cmts[0][0].eventname
     costs = read_all_cost(_od)
-
+    "B011700B"
     try:
         plt.close('all')
         history(cmts, costs)

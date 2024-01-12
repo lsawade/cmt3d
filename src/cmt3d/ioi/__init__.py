@@ -15,9 +15,9 @@ from .functions.kernel import kernel, read_dsdm, write_dsdm, read_dsdm_raw, \
     write_dsdm_raw
 from .functions.forward_kernel import forward_kernel
 from .functions.log import update_iter, update_step, reset_step, get_iter, \
-    reset_iter, read_status
+    get_final_iter, reset_iter, read_status
 from .functions.model import read_model, write_model, get_cmt, \
-    get_simpars, get_iter, get_step, read_model_names, read_perturbation, \
+    get_simpars, get_step, read_model_names, read_perturbation, \
     read_scaling, read_model_all, get_cmt_all
 from .functions.processing import process_data, process_synt, process_dsdm, \
     window, wprocess_dsdm, process_synt_wave, process_synt_wave_mpi, \
@@ -46,7 +46,7 @@ __all__ = [
     "write_data", "write_data_windowed",
     "read_model", "write_model",
     "forward",
-    "get_cmt", "get_simpars", "get_iter", "get_step",
+    "get_cmt", "get_simpars", "get_iter", "get_final_iter", "get_step",
     "cost",
     "get_simpars", "read_model_names", "read_perturbation",
     "gradient",

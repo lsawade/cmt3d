@@ -90,17 +90,32 @@ def check_optvals(outdir, status=True, it=None, ls=None):
 
     # Linesearch failed if w3 is False
     if w3 is False:
-        if status:
-            write_status(
-                outdir,
-                f"FAIL: NOT A DESCENT DIRECTION at it {it:05d} and ls {ls:05d}.")
 
-            write_log(outdir,
-                      f"---> FAIL at it {it:05d} and ls {ls:05d}. Not a descent direction."
-                      f"nls = {ls}, wolfe1 = {w1} wolfe2 = {w2}, "
-                      f"a={alpha}, al={alpha_l}, ar={alpha_r}")
+        if it > 0:
+            if status:
+                write_status(
+                    outdir,
+                    f"SMALLWIN: NOT A DESCENT DIRECTION at it {it:05d} and ls {ls:05d}.")
 
-        return "FAIL"
+                write_log(outdir,
+                        f"---> SMALLWIN at it {it:05d} and ls {ls:05d}. Not a descent direction."
+                        f"nls = {ls}, wolfe1 = {w1} wolfe2 = {w2}, "
+                        f"a={alpha}, al={alpha_l}, ar={alpha_r}")
+
+            return "SMALLWIN"
+
+        else:
+            if status:
+                write_status(
+                    outdir,
+                    f"FAIL: STARTING MODEL does not have descent direction at it {it:05d} and ls {ls:05d}.")
+
+                write_log(outdir,
+                        f"---> FAIL at it {it:05d} and ls {ls:05d}. Not a descent direction."
+                        f"nls = {ls}, wolfe1 = {w1} wolfe2 = {w2}, "
+                        f"a={alpha}, al={alpha_l}, ar={alpha_r}")
+
+            return "FAIL"
 
     # Line search successful
     elif (w1 is True) and (w2 is True):

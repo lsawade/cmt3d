@@ -559,7 +559,7 @@ def cghlc(outdir, it=None, ls=None, cgh_only=False, verbose=True):
 
         linesearch(outdir, it=it, ls=ls)
 
-        # check_optvals(outdir, status=True, it=it, ls=ls)
+        check_optvals(outdir, status=True, it=it, ls=ls)
 
     comm.barrier()
 

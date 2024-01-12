@@ -1,8 +1,12 @@
 from nnodes import root
 import cmt3d.ioi as ioi
 
-def bin(events: list | None = None):
-    """levels: inversion, iteration, step"""
+def bin(events: list | None = None, print_mode='all'):
+    """print_mode: all, done, not_done"""
+
+    if events is not None:
+        if len(events) == 0:
+            events = None
 
     # Initialize root
     root.init()
@@ -36,19 +40,38 @@ def bin(events: list | None = None):
     events_done.sort(key=lambda x: x.name)
     events_not_done.sort(key=lambda x: x.name)
 
-    print(62*"=")
-    print(25*"=", "   DONE   ", 25*"=")
-    print(62*"=")
+    if print_mode == 'all':
+        print(62*"=")
+        print(25*"=", "   DONE   ", 25*"=")
+        print(62*"=")
 
-    for _ev in events_done:
-        print(_ev, _ev.elapsed)
+        # Print ID and elapsed time
+        for _ev in events_done:
+            print(_ev.name, _ev.elapsed)
+
+        print(62*"=")
+        print(25*"=", " NOT DONE ", 25*"=")
+        print(62*"=")
+
+        # Only print ID
+        for _ev in events_not_done:
+            print(_ev.name)
+
+    elif print_mode == 'done':
+
+        # Only print ID
+        for _ev in events_done:
+            print(_ev.name)
 
 
-    print(62*"=")
-    print(25*"=", " NOT DONE ", 25*"=")
-    print(62*"=")
+    elif print_mode == 'not_done':
 
-    for _ev in events_not_done:
-        print(_ev)
+        # Only print ID
+        for _ev in events_not_done:
+            print(_ev)
+    else:
+        raise ValueError(f"print_mode={print_mode} not supported")
+
+
 
 

@@ -23,8 +23,11 @@ def split(container, count):
 
 if rank == 0:
 
-    dbdir = "/gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes"
+    dbdir = "/lustre/orion/geo111/scratch/lsawade/gcmt/nnodes"
     outdirs = os.listdir(dbdir)
+    outdirs.sort()
+
+    outdirs = outdirs[:300]
 
     N = 0
     events = []

@@ -337,13 +337,12 @@ def nnodes_reset_steps():
     bin()
 
 @nnodes.command(name='check-events')
-def nnodes_check_events():
+@click.argument('events', nargs=-1, default=None, type=str)
+@click.option('--print-mode', type=str, default='all')
+def nnodes_check_events(events, print_mode):
     from .bin.nnodes_check_events import bin
-    if len(sys.argv) > 3:
-        events = sys.argv[3:]
-    else:
-        events = None
-    bin(events)
+    bin(events, print_mode=print_mode)
+
 
 @nnodes.command(name='events')
 def nnodes_check_events():

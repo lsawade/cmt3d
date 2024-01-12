@@ -140,7 +140,13 @@ def check_status(statdir):
         return True
 
 
-def check_done(outdir, it=None):
+def check_done(outdir, it=None, force_finish=False):
+
+    if force_finish:
+        message = "FINISHED: PLEASE_CHECK -- Reached model from where I can't descent at it = {it:05d}"
+        write_status(outdir, message)
+        STATUS = True
+        return STATUS
 
     # Get iter,step
     if it is None:

@@ -281,11 +281,11 @@ def maybe_invert(node: Node):
                      nprocs=1, cwd=node.log, timeout=60*6, retry=3)
 
         # Cost, Grad, Hess
-        node.add(compute_cgh, concurrent=True)
-        # node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose --cgh-only {node.outdir}',
-        #              name=f'Cost-Grad-Hess-#{node.it:03d}-ls#{node.step:03d}',
-        #              nprocs=3, cwd=node.log, timeout=60*6, retry=3,
-        #              exec_args={Slurm: '-N1 --time=5'},)
+        # node.add(compute_cgh, concurrent=True)
+        node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose --cgh-only {node.outdir}',
+                     name=f'Cost-Grad-Hess-#{node.it:03d}-ls#{node.step:03d}',
+                     nprocs=3, cwd=node.log, timeout=60*6, retry=3,
+                     exec_args={Slurm: '-N1 --time=5'},)
 
         # Adding the first iteration!
         node.add(iteration, concurrent=False, name=f'Iteration-#{node.it:03d}')
@@ -297,7 +297,7 @@ def preprocess(node: Node):
         # node.add(ioi.get_data, args=(node.outdir,))
 
         # Forward model and process data and synthetics.
-        node.add(forward_frechet_mpi)
+        # node.add(forward_frechet_mpi)
         node.add(process_all, name='Process-All',
                  cwd=node.log, concurrent=True)
 
@@ -339,20 +339,20 @@ def search_step(node):
     #    lines  iter
     node.parent.parent.step = node.step + 1
 
-    # node.add(f"cmt3d-ioi update-step --it {node}{node.outdir}", name='Update-Step')
-    node.add(f"cmt3d-ioi model update --it {node.it} --ls {node.step} {node.outdir}", name='Update-Model')
-    node.add(forward_frechet_mpi)
-    node.add(process_synt_and_dsdm)
-    node.add(compute_cgh)
-    node.add(f"cmt3d-ioi linesearch --it {node.it} --ls {node.step} {node.outdir}",
-             name="Compute-Optvals")
-    # node.add(search_check)
+    # # node.add(f"cmt3d-ioi update-step --it {node}{node.outdir}", name='Update-Step')
+    # node.add(f"cmt3d-ioi model update --it {node.it} --ls {node.step} {node.outdir}", name='Update-Model')
+    # node.add(forward_frechet_mpi)
+    # node.add(process_synt_and_dsdm)
+    # node.add(compute_cgh)
+    # node.add(f"cmt3d-ioi linesearch --it {node.it} --ls {node.step} {node.outdir}",
+    #          name="Compute-Optvals")
+    # # node.add(search_check)
 
-    # Forward modeling and processing
-    # node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose {node.outdir}',
-    #              nprocs=node.step_nproc, cwd=node.log, timeout=60*6, retry=3,
-    #              name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
-    #              exec_args={Slurm: '--nodes=1-4 --time=5'},)
+    # Forward modeling and processing and optval computations
+    node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose {node.outdir}',
+                 nprocs=node.step_nproc, cwd=node.log, timeout=60*6, retry=3,
+                 name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
+                 exec_args={Slurm: '--nodes=1-4 --time=5'},)
 
     node.add(search_check, concurrent=False)
 
@@ -416,12 +416,12 @@ def get_subset(node: Node):
 
 def process_all(node: Node):
     node.add(process_data, concurrent=True)
-    # node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose --fw-only {node.outdir}',
-    #                  nprocs=node.step_nproc, cwd=node.log, timeout=60*6, retry=3,
-    #                  name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
-    #                  exec_args={Slurm: '--nodes=1-4 --time=5'},)
-    node.add(process_synthetics, concurrent=True)
-    node.add(process_dsdm, concurrent=True)
+    node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose --fw-only {node.outdir}',
+                     nprocs=node.step_nproc, cwd=node.log, timeout=60*6, retry=3,
+                     name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
+                     exec_args={Slurm: '--nodes=1-4 --time=5'},)
+    # node.add(process_synthetics, concurrent=True)
+    # node.add(process_dsdm, concurrent=True)
 
 
 def process_synt_and_dsdm(node: Node):
@@ -631,20 +631,31 @@ def iteration_check(node: Node):
     if flag == "FAIL":
         pass
 
-    elif flag == "SUCCESS":
-        if ioi.check_done(node.outdir) is False:
+    elif flag == "SUCCESS" or flag=="SMALLWIN":
+
+        smallwin = flag=="SMALLWIN"
+
+        if ioi.check_done(node.outdir, it=node.it, force_finish=smallwin) is False:
             node.parent.parent.add(iteration, it=node.it + 1, step=0,
                                    name=f'Iteration-#{node.it+1:03d}')
         else:
             node.rm(os.path.join(node.outdir, 'meta', 'subset.h5'))
+            node.rm(os.path.join(node.outdir, 'logs', '*'))
+            node.rm(os.path.join(node.outdir, 'INIT.txt'))
+
 
 
 def search_check(node: Node):
 
     # Check linesearch result.
-    flag = ioi.check_optvals(node.outdir, status=True, it=node.it, ls=node.step)
+    flag = ioi.check_optvals(node.outdir, status=False, it=node.it, ls=node.step)
+
 
     if flag == "FAIL":
+        pass
+
+    elif flag == "SMALLWIN":
+        # linesearch unsuccessful, NO transferring of the model
         pass
 
     elif flag == "SUCCESS":

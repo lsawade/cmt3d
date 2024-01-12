@@ -137,6 +137,12 @@ def get_iter(outdir):
 
     return it
 
+def get_final_iter(outdir):
+    """"""
+    modlfiles = os.listdir(os.path.join(outdir, 'modl'))
+    iters = [int(modlfiles.split('.')[0].split('ls')[0].split('it')[1][:-1]) for modlfiles in modlfiles]
+    return max(iters)
+
 
 def update_step(outdir):
 

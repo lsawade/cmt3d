@@ -1,5 +1,5 @@
 #!/bin/bash
-# Begin LSF Directives
+# Begin SLURM Directives
 #SBATCH -A GEO111
 #SBATCH -t 03:00:00
 #SBATCH -N 20

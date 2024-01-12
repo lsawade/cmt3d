@@ -3,7 +3,6 @@ import cmt3d
 import pickle
 from glob import glob
 from typing import Optional
-from future.utils import lmap
 from obspy import UTCDateTime, Stream
 import logging
 import numpy as np
@@ -11,6 +10,7 @@ import pandas as pd
 import obsproclib as opr
 from scipy.linalg import svdvals
 from . import signal
+from cmt3d.viz import utils
 
 
 def get_event_files(database: str, label: str):
@@ -354,7 +354,7 @@ def get_measurement_N(
         dz = (cmt1.depth_in_m - cmt0.depth_in_m)/1000.0
         dt = cmt1.time_shift - cmt0.time_shift
         dM0 = (cmt1.M0 - cmt0.M0)/cmt0.M0
-        dx = lmap.haversine(
+        dx = utils.haversine(
             cmt0.longitude, cmt0.latitude, cmt1.longitude, cmt1.latitude)
 
         # Get number of measurements involved

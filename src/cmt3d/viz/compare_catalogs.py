@@ -147,7 +147,7 @@ class CompareCatalogs:
         # Get axes
         ax = plt.gca()
 
-        bins = np.arange(-0.5, 0.50001, 0.01)
+        bins = np.arange(-0.5, 0.50001, 0.025)
 
         # Plot histogram GCMT3D
         plt.hist(self.oeps_nu[:, 0], bins=bins, edgecolor='k',

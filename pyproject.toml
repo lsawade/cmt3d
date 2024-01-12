@@ -54,6 +54,12 @@ nnodes = [
 entk = [
     "entk"
 ]
+viz = [
+    "matplotlib",
+    "obsplotlib",
+    "pandas",
+    "cartopy"
+]
 
 [project.urls]  # Optional
 "Homepage" = "https://github.com/lsawade/cmt3d"

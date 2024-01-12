@@ -5,8 +5,10 @@ import cmt3d.ioi as ioi
 
 
 # %%
-dbdir = "/gpfs/alpine/geo111/scratch/lsawade/gcmt/nnodes"
+dbdir = "/lustre/orion/geo111/scratch/lsawade/gcmt/nnodes"
 outdirs = os.listdir(dbdir)
+outdirs.sort()
+outdirs = outdirs[:300]
 
 # %%
 
@@ -51,14 +53,13 @@ if not os.path.exists(gcmt3df_eventdir):
     os.makedirs(gcmt3df_eventdir)
 
 
-
 for od in events:
 
     # Get initial model
     icmt = ioi.get_cmt(od, it=0, ls=0)
 
     # Get final model
-    iter = ioi.get_iter(od)
+    iter = ioi.get_final_iter(od)
 
     # Get final model
     fcmt = ioi.get_cmt(od, it=iter, ls=0)

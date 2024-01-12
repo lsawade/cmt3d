@@ -79,7 +79,7 @@ def read_output_traces(outdir: str, fix: bool = False, verbose: bool = True):
 
         try:
             tobsd = ioi.read_data_windowed(outdir, _wtype)
-            iter = ioi.get_iter(outdir)
+            iter = ioi.get_final_iter(outdir)
             tsynt = ioi.read_synt(outdir, _wtype, iter, 0)
             if fix:
                 tsyntf = read_traces(_wtype, synthetic_fix_dir)
@@ -286,7 +286,7 @@ def fix_synthetics(
     # Get event
     try:
         # Get final model
-        iter = ioi.get_iter(outdir)
+        iter = get_final_iter(outdir)
 
         # Get final model
         event = ioi.get_cmt(outdir, it=iter, ls=0) # type: CMTSource
@@ -345,7 +345,7 @@ def fix_synthetics(
 
     # Write the new measurement dictionary
     # Create filename
-    filename = f"{label}_fix.pkl"
+    filename = f"measurements{label}_fix.pkl"
     outfile = os.path.join(outdir, 'meas', filename)
     if verbose:
         print(f"Outfile: {outfile}")
