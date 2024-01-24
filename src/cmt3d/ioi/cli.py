@@ -91,7 +91,7 @@ def step_mfpcghlc(outdir: str, it=None, ls=None, verbose=False,
     from .functions.step_mfpcghlc import \
         model_update, forward_kernel, process_all_synt, cghlc
 
-    sys.excepthook = mpiabort_excepthook
+    # sys.excepthook = mpiabort_excepthook
 
     if not cgh_only and not fw_only:
         model_update(outdir, it=it, ls=ls)
@@ -104,7 +104,7 @@ def step_mfpcghlc(outdir: str, it=None, ls=None, verbose=False,
     if not fw_only:
         cghlc(outdir, it=it, ls=ls, cgh_only=cgh_only, verbose=verbose)
 
-    sys.excepthook = sys.__excepthook__
+    # sys.excepthook = sys.__excepthook__
 
 
 

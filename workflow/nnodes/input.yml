@@ -1,5 +1,5 @@
 # Inputs. Put full path for safety (~ often isn't recognized by Python)
-#database: /Users/lucassawade/database/nnodes             # Personal
+# database: /Users/lucassawade/database/nnodes             # Personal
 # database: /scratch/gpfs/lsawade/gcmt/db/nnodes          # Traverse
 database: /lustre/orion/geo111/scratch/lsawade/gcmt/nnodes # FRONTIER
 

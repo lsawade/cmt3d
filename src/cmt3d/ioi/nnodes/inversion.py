@@ -159,6 +159,39 @@ def eventloop(node: Node):
              name=f'Event-Check-{0:04d}')
 
 
+def has_error(node):
+
+    for child in node:
+
+        if child._err is not None:
+            print("--------------------", flush=True)
+            node = child
+
+            # Get hierarchy
+            hierarchy = [node.name,]
+            while node.parent is not None:
+                node = node.parent
+                hierarchy.append(node.name)
+
+            # Print hierarchy
+            for _i, msg in enumerate(reversed(hierarchy)):
+                print(_i*2*' ' + msg, flush=True)
+
+            # Print error
+            print("--------------------", flush=True)
+            print("child.name: ", child.name, flush=True)
+            print("child.err: ", child._err, flush=True)
+            print("isnone", child._err is None, flush=True)
+            print("--------------------", flush=True)
+            return True
+
+        if len(child._children) > 0:
+            if has_error(child):
+                return True
+
+    return False
+
+
 def eventcheck(node: Node):
 
     # Get events
@@ -166,6 +199,14 @@ def eventcheck(node: Node):
 
     # Check if subset exists for file
     idx = []
+
+    # If there is an error, set job to fail
+    if has_error(node.parent.parent):
+        tnode = node
+        while tnode.parent is not None:
+            tnode = tnode.parent
+        tnode.job.failed = True
+        raise ValueError("Error in child node, stopping event loop.")
 
     # Loop over events
     for _i, _event in enumerate(events):
@@ -350,9 +391,9 @@ def search_step(node):
 
     # Forward modeling and processing and optval computations
     node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose {node.outdir}',
-                 nprocs=node.step_nproc, cwd=node.log, timeout=60*6, retry=3,
+                 nprocs=node.step_nproc, cwd=node.log, timeout=60*11, retry=3,
                  name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
-                 exec_args={Slurm: '--nodes=1-4 --time=5'},)
+                 exec_args={Slurm: '--nodes=1-4 --time=10'},)
 
     node.add(search_check, concurrent=False)
 
@@ -417,9 +458,9 @@ def get_subset(node: Node):
 def process_all(node: Node):
     node.add(process_data, concurrent=True)
     node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose --fw-only {node.outdir}',
-                     nprocs=node.step_nproc, cwd=node.log, timeout=60*6, retry=3,
+                     nprocs=node.step_nproc, cwd=node.log, timeout=60*11, retry=3,
                      name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
-                     exec_args={Slurm: '--nodes=1-4 --time=5'},)
+                     exec_args={Slurm: '--nodes=1-4 --time=10'},)
     # node.add(process_synthetics, concurrent=True)
     # node.add(process_dsdm, concurrent=True)
 
@@ -444,15 +485,15 @@ def process_data(node: Node):
             command = f"cmt3d-ioi process data --nproc={nproc} {node.outdir} {wave}"
             node.add_mpi(command, nprocs=1, cpus_per_proc=nproc,
                          name=f'process_data_{wave}', cwd=node.log,
-                         timeout=60*12, retry=3,
-                         exec_args={Slurm: '-N1 --time=10'})
+                         timeout=60*16, retry=3,
+                         exec_args={Slurm: '-N1-4 --time=15'})
 
         elif backend == 'mpi':
             command = f"cmt3d-ioi process data {node.outdir} {wave}"
             node.add_mpi(command, nprocs=nproc,
                          name=f'process_data_{wave}_mpi', cwd=node.log,
-                         timeout=60*12, retry=3,
-                         exec_args={Slurm: '-N1 --time=10'})
+                         timeout=60*16, retry=3,
+                         exec_args={Slurm: '-N1-4 --time=15'})
 
         else:
             raise ValueError('Double check your backend/multiprocessing setup')
@@ -544,15 +585,15 @@ def window(node: Node):
             command = f"cmt3d-ioi window select --nproc={nproc} {node.outdir} {wave}"
             node.add_mpi(command, nprocs=1, cpus_per_proc=nproc,
                          name=f'window_{wave}',
-                         cwd=node.log, timeout=60*12, retry=3,
-                         exec_args={Slurm: '-N1 --time=10'})
+                         cwd=node.log, timeout=60*15, retry=3,
+                         exec_args={Slurm: '-N1-4 --time=15'})
 
         elif backend == 'mpi':
             command = f"cmt3d-ioi window select {node.outdir} {wave}"
             node.add_mpi(command, nprocs=nproc,
                          name=f'window_{wave}_mpi', cwd=node.log,
-                         timeout=60*12, retry=3,
-                         exec_args={Slurm: '-N1 --time=10'})
+                         timeout=60*16, retry=3,
+                         exec_args={Slurm: '-N1-4 --time=15'})
         else:
             raise ValueError('Double check your backend/multiprocessing setup')
 

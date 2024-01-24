@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -A GEO111
-#SBATCH -t 01:00
+#SBATCH -t 20:00
 #SBATCH -N1
 #SBATCH -J Event_fix
 #SBATCH --output=Event_fix.%J.o.txt

@@ -10,8 +10,18 @@ def bin(events, level='inversion'):
 
     for _wf in root:
 
-        if _wf.name != 'Event-Loop':
+        if _wf.name != 'Event-Loop' and _wf.name != 'Subset-Events':
             continue
+
+        if _wf.name == 'Subset-Events' and level=='remove':
+            print("entering subset loop")
+            for _task in _wf:
+                for _chunk in _task:
+                    for _event in events:
+                        # print("_chunk.name:", _chunk.name)
+                        if _event in _chunk.name:
+                            print("Removing:", _event, "from subset loop")
+                            _task._children.pop(_task._children.index(_chunk))
 
         for _task in _wf:
             if _task.name == 'eventcheck' or _task.name not in events:

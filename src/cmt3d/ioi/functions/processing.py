@@ -716,10 +716,13 @@ def window_wave_mpi(outdir, wavetype, verbose=True):
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
-
+    size = comm.Get_rank()
+    print("Before loading the data", rank, size, flush=True)
     if rank == 0:
+
+        # Loop over
         if verbose:
-            print(f"Processing {wavetype}")
+            print(f"Windowing {wavetype} ...")
             print("-> Loading parameters")
 
         # Get dirs
@@ -738,13 +741,19 @@ def window_wave_mpi(outdir, wavetype, verbose=True):
         window_debug_flag = True
         taper_debug_flag = True
 
-        # Loop over
-        if verbose:
-            print(f"Windowing {wavetype} ...")
 
         # Read synthetics and data
+        if verbose:
+            print(f"Read synthetics")
         synt = read_synt(outdir, wavetype, 0, 0)
+
+        if verbose:
+            print(f"Read data")
+
         data = read_data(outdir, wavetype)
+
+        if verbose:
+            print(f"Making window dicts")
 
         wrap_windowdicts = []
         for window_dict in processdict[wavetype]["window"]:
@@ -772,6 +781,8 @@ def window_wave_mpi(outdir, wavetype, verbose=True):
     # Broadcast the window dictionaries
     wrap_windowdicts = comm.bcast(wrap_windowdicts, root=0)
 
+    print("Before windowing", rank, size, flush=True)
+    comm.barrier()
     # Windowing
     for i in range(NWD):
 
@@ -843,5 +854,3 @@ def bin():
 if __name__ == "__main__":
     bin()
 
-# %%
-""

@@ -286,7 +286,7 @@ def fix_synthetics(
     # Get event
     try:
         # Get final model
-        iter = get_final_iter(outdir)
+        iter = ioi.get_final_iter(outdir)
 
         # Get final model
         event = ioi.get_cmt(outdir, it=iter, ls=0) # type: CMTSource
