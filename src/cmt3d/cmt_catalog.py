@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import typing as tp
 import sys
 import time
 from copy import deepcopy
@@ -23,22 +24,24 @@ from cmt3d.utils import sec2hhmmss
 
 
 class CMTCatalog:
-
     cmts: List[CMTSource]
 
     # Attributes and properties of a CMTSource
     attributes: list = [a for a in vars(CMTSource()).keys()]
     attributes += [
-        a for a, _ in inspect.getmembers(
-            CMTSource, lambda x: not inspect.isroutine(x)) if "__" not in a]
+        a
+        for a, _ in inspect.getmembers(CMTSource, lambda x: not inspect.isroutine(x))
+        if "__" not in a
+    ]
     specialpropertylist: list = []
 
     # Just for printing
     uniqueatt = set(attributes)
 
     # Get possible decomposition types
-    dtypes = [func for func, _ in inspect.getmembers(
-        sourcedecomposition, inspect.isfunction)]
+    dtypes = [
+        func for func, _ in inspect.getmembers(sourcedecomposition, inspect.isfunction)
+    ]
 
     def __init__(self, cmts: Union[List[CMTSource], None] = None):
         """Creates instance of CMTCatalog
@@ -66,7 +69,7 @@ class CMTCatalog:
             cls = cPickle.load(input_file)
         return cls
 
-    @ classmethod
+    @classmethod
     def from_obspy_catalog(cls, cat: obspy.Catalog):
         """Converts obspy catalog to CMTCatalog"""
 
@@ -74,7 +77,7 @@ class CMTCatalog:
 
         return cls(cmts)
 
-    @ classmethod
+    @classmethod
     def from_file_list(self, file: Union[str, list]):
         """Takes in filestring, globstring list of files, or list of glob
         strings. Then converts each file to a cmtsolution, from which a
@@ -86,8 +89,7 @@ class CMTCatalog:
             if isinstance(file[0], str):
                 filelist = file
             else:
-                raise ValueError(
-                    "List type not supported. Must be list of strings.")
+                raise ValueError("List type not supported. Must be list of strings.")
 
         cmtfilelist = []
         for _file in filelist:
@@ -143,55 +145,59 @@ class CMTCatalog:
 
         elif vtype == "decomp":
             if dtype is not None and dtype in self.dtypes:
-
                 vals = []
                 for _cmt in self.cmts:
                     vals.append(getattr(_cmt, vtype)(dtype))
                 return np.array(vals)
             else:
                 raise ValueError(
-                    f"Method for decomposition must be given and"
-                    f"in {self.dtypes}")
+                    f"Method for decomposition must be given and" f"in {self.dtypes}"
+                )
         else:
             raise ValueError(
-                f"Value {vtype} not implemented, choose from"
-                f"{self.uniqueatt}")
+                f"Value {vtype} not implemented, choose from" f"{self.uniqueatt}"
+            )
 
     @property
     def dataframe(self) -> DataFrame:
-
-        if 'DataFrame' not in sys.modules.keys():
+        if "DataFrame" not in sys.modules.keys():
             raise ValueError(
-                'Pandas is probably not installed. It''s not loaded if it is not installed.')
+                "Pandas is probably not installed. It"
+                "s not loaded if it is not installed."
+            )
 
         columns = [
-            'origin_time',
-            'pde_latitude',
-            'pde_longitude',
-            'pde_depth_in_m',
-            'mb',
-            'ms',
-            'region_tag',
-            'eventname',
-            'time_shift',
-            'half_duration',
-            'latitude',
-            'longitude',
-            'depth_in_m',
-            'm_rr',
-            'm_tt',
-            'm_pp',
-            'm_rt',
-            'm_rp',
-            'm_tp'
+            "origin_time",
+            "pde_latitude",
+            "pde_longitude",
+            "pde_depth_in_m",
+            "mb",
+            "ms",
+            "region_tag",
+            "eventname",
+            "time_shift",
+            "half_duration",
+            "latitude",
+            "longitude",
+            "depth_in_m",
+            "m_rr",
+            "m_tt",
+            "m_pp",
+            "m_rt",
+            "m_rp",
+            "m_tp",
         ]
         rows = []
         for cmt in self:
             rows.append(cmt.to_row())
         return DataFrame(rows, columns=columns)
 
-    def add(self, cmt: Union[List[Union[CMTSource, Event]],
-                             CMTSource, Event, obspy.Catalog, CMTCatalog]):
+    def add(
+        self,
+        cmt: Union[
+            List[Union[CMTSource, Event]], CMTSource, Event, obspy.Catalog, CMTCatalog
+        ],
+    ):
         """Adds an event a
 
         Parameters
@@ -204,19 +210,20 @@ class CMTCatalog:
             self.cmts.append(cmt)
         elif isinstance(cmt, Event):
             self.cmts.append(CMTSource.from_event(cmt))
-        elif isinstance(cmt, list) or isinstance(cmt, obspy.Catalog) \
-                or isinstance(cmt, CMTCatalog):
+        elif (
+            isinstance(cmt, list)
+            or isinstance(cmt, obspy.Catalog)
+            or isinstance(cmt, CMTCatalog)
+        ):
             for _cmt in cmt:
                 if isinstance(_cmt, CMTSource):
                     self.cmts.append(_cmt)
                 elif isinstance(_cmt, Event):
                     self.cmts.append(CMTSource.from_event(_cmt))
         else:
-            ValueError(
-                f"Type {type(cmt)} is not supported to be added to the catalog.")
+            ValueError(f"Type {type(cmt)} is not supported to be added to the catalog.")
 
     def get_event(self, eventname: str):
-
         # If eventid is a string
         for _i, _cmt in enumerate(self.cmts):
             if _cmt.eventname == eventname:
@@ -225,11 +232,11 @@ class CMTCatalog:
         raise ValueError(f"No event in catalog for {eventname}")
 
     def pop(self, eventname: Union[List[str], str, List[int], int]):
-
         # If eventid is a string
         if isinstance(eventname, str):
-            popindices = [_i for _i, _cmt in enumerate(self.cmts)
-                          if _cmt.eventname == eventname]
+            popindices = [
+                _i for _i, _cmt in enumerate(self.cmts) if _cmt.eventname == eventname
+            ]
 
         # If eventid is a list
         elif isinstance(eventname, list):
@@ -238,17 +245,20 @@ class CMTCatalog:
             for _ev in eventname:
                 if isinstance(_ev, str):
                     popindices.append(
-                        [_i for _i, _cmt in enumerate(self.cmts)
-                            if _cmt.eventname == _ev][0])
+                        [
+                            _i
+                            for _i, _cmt in enumerate(self.cmts)
+                            if _cmt.eventname == _ev
+                        ][0]
+                    )
                 elif isinstance(_ev, int):
                     popindices.append(_ev)
                 else:
                     raise ValueError(
-                        f"Type {eventname[0]} for event "
-                        f"popping is not supported.")
+                        f"Type {eventname[0]} for event " f"popping is not supported."
+                    )
         else:
-            raise ValueError(
-                f"Type {eventname} for popping is not supported.")
+            raise ValueError(f"Type {eventname} for popping is not supported.")
 
         # Pop indeces in reverse order to not mess up the list.
         for _popindex in reversed(sorted(popindices)):
@@ -259,7 +269,7 @@ class CMTCatalog:
         return len(self.cmts)
 
     def __iter__(self):
-        """ Returns the Iterator object. """
+        """Returns the Iterator object."""
         return iter(self.cmts)
 
     def __getitem__(self, index: Union[int, Iterable[int], slice]):
@@ -276,11 +286,8 @@ class CMTCatalog:
         else:
             raise ValueError("Index type not supported.")
 
-
-
     @staticmethod
     def same_eventids(id1, id2):
-
         id1 = id1 if not id1[0].isalpha() else id1[1:]
         id2 = id2 if not id2[0].isalpha() else id2[1:]
 
@@ -322,8 +329,8 @@ class CMTCatalog:
             self.cmts = self[indeces].cmts
         else:
             raise ValueError(
-                f"{key} is not a valid sorting value.\n"
-                f"Use {self.attributes}.")
+                f"{key} is not a valid sorting value.\n" f"Use {self.attributes}."
+            )
 
     def filter(self, maxdict: dict = dict(), mindict: dict = dict()):
         """This uses two dictionaries as inputs. One dictionary for
@@ -380,7 +387,6 @@ class CMTCatalog:
 
         # First maxvalues
         for key, value in maxdict.items():
-
             # Create empty pop set
             popset = set()
 
@@ -399,7 +405,6 @@ class CMTCatalog:
 
         # First minvalues
         for key, value in mindict.items():
-
             # Create empty pop set
             popset = set()
 
@@ -417,6 +422,105 @@ class CMTCatalog:
                 poppedlist.append(newlist.pop(_i))
 
         return CMTCatalog(newlist), CMTCatalog(poppedlist)
+
+    def split_to_mechanism(
+        self,
+        thrust_tension_plunge_threshold: float = 50,
+        thrust_null_value_threshold: float = 0.2,
+        # thrust_null_plunge_threshold: float = 10.0,
+        normal_pressure_plunge_threshold: float = 50,
+        normal_null_value_threshold: float = 0.2,
+        strike_slip_null_plunge_threshold: float = 20,
+        strike_slip_null_value_threshold: float = 0.2,
+    ) -> tp.Dict[str, CMTCatalog]:
+        """Split catalog into normal, thrust and strike-slip events. Using the
+        following criteria:
+
+        - Normal:
+            * P axis plunge > normal_tension_plunge_threshold (e.g. 70 degrees)
+            * null axis value < normal_null_value_threshold (e.g. 0.2)
+        - Thrust:
+            * T axis plunge > thrust_tension_plunge_threshold (e.g. 70 degrees)
+            * null axis value < thrust_null_value_threshold
+        - Strike-slip:
+            * Null axis plunge > strike_slip_tension_plunge_threshold (e.g. 70 degrees)
+            * null axis value < strike_slip_null_value_threshold (e.g. 0.2
+
+
+        Parameters
+        ----------
+        thrust_tension_plunge_threshold : float, optional
+            _description_, by default 50
+        thrust_null_value_threshold : float, optional
+            _description_, by default 0.2
+        normal_pressure_plunge_threshold : float, optional
+            _description_, by default 70
+        normal_null_value_threshold : float, optional
+            _description_, by default 0.2
+        strike_slip_null_plunge_threshold : float, optional
+            _description_, by default 20
+        strike_slip_null_value_threshold : float, optional
+            _description_, by default 0.2
+
+        Returns
+        -------
+        tp.Dict[str, CMTCatalog]
+            Dictionary containing the catalogs for each mechanism with keywords:
+            ``normal``, ``thrust``, ``strike-slip``.
+        """
+        normal_events = []
+        thrust_events = []
+        strike_slip_events = []
+
+        for _i, ev in enumerate(self):
+            # eqpar gives T-B-P (tension - null - compression) axes
+            eivals = ev.eqpar[4]
+            plunge = ev.eqpar[6]
+            azimuth = ev.eqpar[7]
+
+            # Assign the values to variables (T, B, P)
+            _, LB, _ = eivals
+            PT, PB, PP = plunge
+            # AT, AB, AP = azimuth
+
+            # To get normal events, we select events that have a
+            # P axis plunge > normal_tension_plunge_threshold (e.g. 70 degrees)
+            # and
+            # null axis value < normal_null_value_threshold (e.g. 0.2)
+            if (
+                PP
+                > normal_pressure_plunge_threshold
+                # and LB < normal_null_value_threshold
+            ):
+                normal_events.append(ev)
+
+            # To get thrust events, we select events that have a
+            # T axis plunge > thrust_tension_plunge_threshold (e.g. 70 degrees)
+            # and
+            # null axis value < thrust_null_value_threshold
+            if (
+                PT
+                > thrust_tension_plunge_threshold
+                # and LB < thrust_null_value_threshold
+            ):
+                thrust_events.append(ev)
+
+            # To get strike-slip events, we select events that have a
+            # Null axis plunge > strike_slip_tension_plunge_threshold (e.g. 70 degrees)
+            # and
+            # null axis value < strike_slip_null_value_threshold (e.g. 0.2
+            if (
+                PB
+                > strike_slip_null_plunge_threshold
+                # and LB < strike_slip_null_value_threshold
+            ):
+                strike_slip_events.append(ev)
+
+        return {
+            "normal": CMTCatalog(normal_events),
+            "thrust": CMTCatalog(thrust_events),
+            "strike-slip": CMTCatalog(strike_slip_events),
+        }
 
     def check_ids(self, other: CMTCatalog, verbose: bool = False):
         """Takes in another catalog and returns a tuple of self and other
@@ -439,15 +543,13 @@ class CMTCatalog:
                 cmtother.append(_cmtother)
             except ValueError:
                 if verbose:
-                    print(
-                        f"Didn't find corresponding events "
-                        f"for {_cmt.eventname}")
+                    print(f"Didn't find corresponding events " f"for {_cmt.eventname}")
 
         return CMTCatalog(cmtself), CMTCatalog(cmtother)
 
     def in_catalog(
-            self, event: Union[str, List[str]], verbose=False,
-            thorough_check: bool = False):
+        self, event: Union[str, List[str]], verbose=False, thorough_check: bool = False
+    ):
         """Check whether event id is in the catalog or not. If single stringf.
         is provided it will return the CMTSource if it is in the catalog. If
         a list of IDs is provided a new catalog containing those events will be
@@ -473,42 +575,38 @@ class CMTCatalog:
         # Loop over cmts and add them to list of they are in the catalog
         cmts = []
         for _cmtname in event:
-
             try:
                 _cmt = self.get_event(_cmtname)
                 cmts.append(_cmt)
 
             except ValueError as e:
-
                 if thorough_check:
-                    for _letter in ['B', 'S', 'M', 'C', 'E']:
-
+                    for _letter in ["B", "S", "M", "C", "E"]:
                         try:
                             # Check corrected name
                             _cmt = self.get_event(_letter + _cmtname[1:])
                             cmts.append(_cmt)
                             if verbose:
                                 print(
-                                    f"{_cmtname} had wrong ID: {_letter + _cmtname[1:]}")
+                                    f"{_cmtname} had wrong ID: {_letter + _cmtname[1:]}"
+                                )
                             break
 
                         except ValueError as e:
                             if verbose:
-                                print(
-                                    f"{_cmtname} not {_letter + _cmtname[1:]}")
+                                print(f"{_cmtname} not {_letter + _cmtname[1:]}")
 
-                            if _letter == 'C':
+                            if _letter == "C":
                                 if verbose:
                                     print(
                                         f"Didn't find corresponding events "
-                                        f"for {_cmtname}")
+                                        f"for {_cmtname}"
+                                    )
 
                 else:
                     if verbose:
                         print(e)
-                        print(
-                            f"Didn't find corresponding events "
-                            f"for {_cmtname}")
+                        print(f"Didn't find corresponding events " f"for {_cmtname}")
 
         if len(cmts) == 0:
             raise ValueError("No CMTs in catalog that match the input id(s).")
@@ -519,7 +617,6 @@ class CMTCatalog:
             return CMTCatalog(cmts)
 
     def cmts2dir(self, outdir: str = "./newcatalog"):
-
         # Create dir if doesn't exist.
         if os.path.exists(outdir) is False:
             os.mkdir(outdir)
@@ -538,7 +635,6 @@ class CMTCatalog:
         print(f"     Done. Elapsed Time: {sec2hhmmss(t1-t0)[-1]}")
 
     def cmts2file(self, outfile: str = "./catalog.txt"):
-
         # Start print
         print(f"---> Writing cmts to {outfile}")
         t0 = time.time()
@@ -561,7 +657,7 @@ class CMTCatalog:
         outcat.sort()
 
         if isinstance(outfile, str):
-            with open(outfile, 'w') as f:
+            with open(outfile, "w") as f:
                 for _cmt in self:
                     f.write(_cmt.eventname + "\n")
         else:
@@ -572,7 +668,6 @@ class CMTCatalog:
         return self.__str__()
 
     def __str__(self):
-
         Mw = self.getvals(vtype="moment_magnitude")
         utc = self.getvals(vtype="origin_time")
         lat = self.getvals(vtype="latitude")
@@ -585,7 +680,9 @@ class CMTCatalog:
         string += f"Starttime:{min(utc).strftime('%Y/%m/%d, %H:%M:%S'):.>50}\n"
         string += f"Endtime:{max(utc).strftime('%Y/%m/%d, %H:%M:%S'):.>52}\n"
         string += f"Bounding Box:{'Latitude: ':.>25}{'':.<2}[{np.min(lat):8.3f}, {np.max(lat):8.3f}]\n"
-        string += f"{'Longitude: ':.>39}{'':.<1}[{np.min(lon):8.3f}, {np.max(lon):8.3f}]\n"
+        string += (
+            f"{'Longitude: ':.>39}{'':.<1}[{np.min(lon):8.3f}, {np.max(lon):8.3f}]\n"
+        )
         string += f"Moment Magnitude:{'':.>23}[{np.min(Mw):8.3f}, {np.max(Mw):8.3f}]\n"
         string += "\n"
         string += 60 * "-" + "\n"
