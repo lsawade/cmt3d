@@ -9,7 +9,7 @@ debug = false
 node_splittable = true
 
 [root]
- task = ["cmt3d.ioi.nnodes.inversion", "main",]
+task = ["cmt3d.ioi.nnodes.inversion", "main",]
 inputfile = "/ccs/home/lsawade/gcmt_andes/cmt3d/workflow/nnodes/input.yml"
 # inputfile = "/ccs/home/lsawade/gcmt/cmt3d/workflow/nnodes/input_hard_damping.yml"
 # inputfile = "/ccs/home/lsawade/gcmt/cmt3d/workflow/nnodes/input_fix_depth_10.yml"
@@ -29,7 +29,7 @@ db_is_local = true
 # Multiprocesses: Number of cores to use for the processing
 backend = 'mpi' #['multiprocessing', 'mpi']
 # Submission parameters
-forward_nproc = 64
+forward_nproc = 63
 forward_memory_per_cpu = '7GB'
 subset_memory = '150GB'
 process_nproc = 10
