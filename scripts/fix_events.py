@@ -27,7 +27,7 @@ if rank == 0:
     outdirs = os.listdir(dbdir)
     outdirs.sort()
 
-    outdirs = outdirs[3800:4750]
+    outdirs = outdirs[4750:5700]
 
     N = 0
     events = []

@@ -20,14 +20,18 @@ inputfile = "/ccs/home/lsawade/gcmt_andes/cmt3d/workflow/nnodes/input.yml"
 # max_conc = 10
 subset_max_conc = 8 # max number of subsets to get simultaneously
 inversion_max_conc = 50 # max number of subsets to get simultaneously
-start_index = 5350
-end_index = 5750
+start_index = 5550
+end_index = 5950
 redo = true
 redo_keep_subset = false
 dbname = "/lustre/orion/geo111/scratch/lsawade/DB/GLAD-M25/128_single"
 db_is_local = true
 # Multiprocesses: Number of cores to use for the processing
 backend = 'mpi' #['multiprocessing', 'mpi']
+# Submission parameters
+forward_nproc = 64
+forward_memory_per_cpu = '7GB'
+subset_memory = '150GB'
 process_nproc = 10
 window_nproc = 20
 save_interval = 30

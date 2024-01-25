@@ -131,7 +131,7 @@ def create_dir_and_subset(node: Node):
         # Create the inversion directory/makesure all things are in place
         command = f"cmt3d-ioi create {node.eventfile} {node.inputfile}"
         node.add_mpi(command, name=f"Create-Inv-dir", cwd=node.log,
-                     exec_args={Slurm: '-N1 --time=5'},
+                     exec_args={Slurm: f'-N1 --time=5'},
                      nprocs=1, cpus_per_proc=3, timeout=60*6, retry=3)
 
         # Load Green function
@@ -257,7 +257,7 @@ def eventcheck(node: Node):
         child_node = node.add_mpi(
             f'sleep {node.eventchecksleep} && echo "done sleeping"',
             name=f"Event-Loop-Resting-Phase-#{node.counter:04d}",
-            exec_args={Slurm: f'-N1 --time={int(node.eventchecksleep/60)+1}'},
+            exec_args={Slurm: f'--time={int(node.eventchecksleep/60)+1}'},
             nprocs=1, cwd='./logs',
             timeout=node.eventchecksleep+2*60, retry=3)
 
@@ -389,11 +389,10 @@ def search_step(node):
     #          name="Compute-Optvals")
     # # node.add(search_check)
 
-    # Forward modeling and processing and optval computations
     node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose {node.outdir}',
-                 nprocs=node.step_nproc, cwd=node.log, timeout=60*11, retry=3,
-                 name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
-                 exec_args={Slurm: '--nodes=1-4 --time=10'},)
+                     nprocs=node.forward_nproc, cwd=node.log, timeout=60*11, retry=3,
+                     name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
+                     exec_args={Slurm: f'--nodes=2 --exclusive --ntasks-per-node={int(node.forward_nproc/2)} --time=10 --mem=0'},)
 
     node.add(search_check, concurrent=False)
 
@@ -447,8 +446,8 @@ def get_subset(node: Node):
         flag = ""
     command = f"cmt3d-ioi subset {flag} {node.outdir} {node.dbname}"
 
-    node.add_mpi(command, nprocs=1, cpus_per_proc=20, name='Getting-Subset',
-                 exec_args={Slurm: '-N1 --time=10'},
+    node.add_mpi(command, nprocs=1, cpus_per_proc=32, name='Getting-Subset',
+                 exec_args={Slurm: f'-N1 --exclusive --time=10 --mem={node.subset_memory}'},
                  cwd=node.log, retry=3, timeout=60*12)
 
 # ----------
@@ -457,10 +456,13 @@ def get_subset(node: Node):
 
 def process_all(node: Node):
     node.add(process_data, concurrent=True)
+
+    # Andes has 8GB per core limiting this to 7GB per used core should make sure
+    # That a command has enough memory to run.
     node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose --fw-only {node.outdir}',
-                     nprocs=node.step_nproc, cwd=node.log, timeout=60*11, retry=3,
+                     nprocs=node.forward_nproc, cwd=node.log, timeout=60*11, retry=3,
                      name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
-                     exec_args={Slurm: '--nodes=1-4 --time=10'},)
+                     exec_args={Slurm: f'--nodes=2 --exclusive --ntasks-per-node={int(node.forward_nproc/2)} --time=10 --mem=0'},)
     # node.add(process_synthetics, concurrent=True)
     # node.add(process_dsdm, concurrent=True)
 

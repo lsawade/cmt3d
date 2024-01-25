@@ -203,14 +203,17 @@ def forward_kernel(outdir, it=None, ls=None, verbose=True):
                 rankcounter += 2
 
         # Adding the
+
         missing_cores = size - len(rankmap)
         rankmap += [[None, None, None, None],] * missing_cores
+
 
     else:
 
         rankmap = None
         model_names = None
         perturbation = None
+        rankcounter = None
 
     if rank == 0 and verbose:
         print('--> Set up rankmap')
@@ -239,6 +242,7 @@ def forward_kernel(outdir, it=None, ls=None, verbose=True):
 
     # Get the MPI subset needs to be read by all cores because of the
     # broadcasting!!!!
+
     MS = MPISubset(os.path.join(outdir, 'meta', 'subset.h5'))
 
     if rank == 0 and verbose:
@@ -266,9 +270,12 @@ def forward_kernel(outdir, it=None, ls=None, verbose=True):
         data = np.gradient(data, MS.header['dt'], axis=2)
         drp = MS.get_stream(cmt, data*-1)
 
+
         # Then we can directly write the perturbed synthetics
         idx = model_names.index(par)
         write_dsdm_raw(drp, outdir, idx)
+
+        del data, drp
 
         if verbose:
             print('--> Written timeshift', flush=True)
@@ -281,9 +288,9 @@ def forward_kernel(outdir, it=None, ls=None, verbose=True):
 
         # For the moment tensor elements we only of the traces we only need to
         drp = MS.get_stream(cmt, data * (1/pert))
-
-
         write_dsdm_raw(drp, outdir, idx)
+
+        del data, drp
 
         if verbose:
             print(f'--> Written {par}', flush=True)
@@ -328,6 +335,9 @@ def forward_kernel(outdir, it=None, ls=None, verbose=True):
             # Write strem to pickle
             drp = MS.get_stream(cmt, data)
             write_dsdm_raw(drp, outdir, idx)
+
+            del data, neg, drp
+
         if verbose:
             print(f'--> Written {par}', flush=True)
 
