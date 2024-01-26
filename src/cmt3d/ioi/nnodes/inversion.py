@@ -389,10 +389,14 @@ def search_step(node):
     #          name="Compute-Optvals")
     # # node.add(search_check)
 
+    flags = ""
+    if node.forward_slurm_flags:
+        flags += " " + node.forward_slurm_flags
+
     node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose {node.outdir}',
                      nprocs=node.forward_nproc, cwd=node.log, timeout=60*11, retry=3,
                      name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
-                     exec_args={Slurm: f'--nodes=2 --exclusive --ntasks-per-node={int(node.forward_nproc/2)} --time=10 --mem=0'},)
+                     exec_args={Slurm: f'--time=10 {flags}'},)
 
     node.add(search_check, concurrent=False)
 
@@ -444,10 +448,15 @@ def get_subset(node: Node):
         flag = "--local"
     else:
         flag = ""
+
+    flags = ""
+    if node.subset_slurm_flags:
+        flags += " " + node.subset_slurm_flags
+
     command = f"cmt3d-ioi subset {flag} {node.outdir} {node.dbname}"
 
-    node.add_mpi(command, nprocs=1, cpus_per_proc=32, name='Getting-Subset',
-                 exec_args={Slurm: f'-N1 --exclusive --time=10 --mem={node.subset_memory}'},
+    node.add_mpi(command, nprocs=1, cpus_per_proc=node.subset_nproc, name='Getting-Subset',
+                 exec_args={Slurm: f'--time=10 {flags}'},
                  cwd=node.log, retry=3, timeout=60*12)
 
 # ----------
@@ -457,12 +466,14 @@ def get_subset(node: Node):
 def process_all(node: Node):
     node.add(process_data, concurrent=True)
 
-    # Andes has 8GB per core limiting this to 7GB per used core should make sure
-    # That a command has enough memory to run.
+    flags = ""
+    if node.forward_slurm_flags:
+        flags += " " + node.forward_slurm_flags
+
     node.add_mpi(f'cmt3d-ioi step-mfpcghc --it {node.it} --ls {node.step} --verbose --fw-only {node.outdir}',
                      nprocs=node.forward_nproc, cwd=node.log, timeout=60*11, retry=3,
                      name=f'Step-MFPCGHC-MPI-it#{node.it:03d}-ls#{node.step:03d}',
-                     exec_args={Slurm: f'--nodes=2 --exclusive --ntasks-per-node={int(node.forward_nproc/2)} --time=10 --mem=0'},)
+                     exec_args={Slurm: f'--time=10 {flags}'},)
     # node.add(process_synthetics, concurrent=True)
     # node.add(process_dsdm, concurrent=True)
 
@@ -495,7 +506,7 @@ def process_data(node: Node):
             node.add_mpi(command, nprocs=nproc,
                          name=f'process_data_{wave}_mpi', cwd=node.log,
                          timeout=60*16, retry=3,
-                         exec_args={Slurm: '-N1-4 --time=15'})
+                         exec_args={Slurm: '-N1 --exclusive --time=15'})
 
         else:
             raise ValueError('Double check your backend/multiprocessing setup')
@@ -595,7 +606,7 @@ def window(node: Node):
             node.add_mpi(command, nprocs=nproc,
                          name=f'window_{wave}_mpi', cwd=node.log,
                          timeout=60*16, retry=3,
-                         exec_args={Slurm: '-N1-4 --time=15'})
+                         exec_args={Slurm: '-N1 --exclusive --time=15'})
         else:
             raise ValueError('Double check your backend/multiprocessing setup')
 
