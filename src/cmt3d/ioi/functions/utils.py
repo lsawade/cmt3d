@@ -687,11 +687,32 @@ def create_gfm(outdir, dbname: str, local: bool = True):
                 # Get subset
                 GFM = GFManager(db_files)
                 GFM.load_header_variables()
-                GFM.write_subset_directIO(subsetfilename,
-                                          cmt.latitude, cmt.longitude, cmt.depth_in_m/1000.0,
-                                          dist_in_km=90.0, NGLL=5,
-                                          fortran=False)
 
+                try:
+                    GFM.write_subset_directIO(subsetfilename,
+                                              cmt.latitude, cmt.longitude, cmt.depth_in_m/1000.0,
+                                              dist_in_km=80.0, NGLL=5,
+                                              fortran=False)
+                except ValueError as e:
+                    print('Did not find any elements within 80km (probably deep event) trying with larger radius.')
+                    print(e)
+                    print('------------------------------------------------')
+
+                    try:
+                        GFM.write_subset_directIO(subsetfilename,
+                                        cmt.latitude, cmt.longitude,
+                                        cmt.depth_in_m/1000.0,
+                                        dist_in_km=100.0, NGLL=5,
+                                        fortran=False)
+                    except ValueError as e:
+                        print('Did not find any elements within 100km (probably deep event) trying with larger radius.')
+                        print(e)
+                        print('------------------------------------------------')
+                        GFM.write_subset_directIO(subsetfilename,
+                                        cmt.latitude, cmt.longitude,
+                                        cmt.depth_in_m/1000.0,
+                                        dist_in_km=125.0, NGLL=5,
+                                        fortran=False)
         else:
 
             from gf3d.client import GF3DClient
@@ -699,7 +720,7 @@ def create_gfm(outdir, dbname: str, local: bool = True):
 
             # Get subset
             gfc.get_subset(subsetfilename, cmt.latitude, cmt.longitude,
-                           cmt.depth_in_m/1000.0, radius_in_km=50.0, NGLL=5,
+                           cmt.depth_in_m/1000.0, radius_in_km=90.0, NGLL=5,
                            fortran=False)
 
     # if os.path.exists(loaded_pickle) is False:

@@ -506,7 +506,7 @@ def process_data(node: Node):
             node.add_mpi(command, nprocs=nproc,
                          name=f'process_data_{wave}_mpi', cwd=node.log,
                          timeout=60*16, retry=3,
-                         exec_args={Slurm: '-N1 --exclusive --time=15'})
+                         exec_args={Slurm: '-N1 --time=15'})
 
         else:
             raise ValueError('Double check your backend/multiprocessing setup')

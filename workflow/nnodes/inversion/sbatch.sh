@@ -1,12 +1,12 @@
 #!/bin/bash
 # Begin SLURM Directives
 #SBATCH -A GEO111
-#SBATCH -t 01:00:00
-#SBATCH -N 25
+#SBATCH -t 02:00:00
+#SBATCH -N 100
 #SBATCH -J Inversion
 #SBATCH --mem=0
 #SBATCH --requeue
-#SBATCH -q debug
+# SBATCH -q debug
 #SBATCH --output=R-%x.%j.o.txt
 #SBATCH --error=R-%x.%j.e.txt
 #SBATCH --mail-type=end

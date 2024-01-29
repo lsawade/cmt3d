@@ -1,12 +1,12 @@
 [job]
 system = [ "nnodes.job", "Frontier",]
 name = "Inversion Set"
-nnodes = 25
+nnodes = 100
 account = "GEO111"
-walltime = 60.0
+walltime = 120.0
 gap = 10.0
 debug = false
-node_splittable = false
+node_splittable = true
 
 [root]
 task = ["cmt3d.ioi.nnodes.inversion", "main",]
@@ -19,9 +19,9 @@ inputfile = "/ccs/home/lsawade/gcmt_andes/cmt3d/workflow/nnodes/input.yml"
 # end_index = 10
 # max_conc = 10
 subset_max_conc = 30 # max number of subsets to get simultaneously
-inversion_max_conc = 50 # max number of subsets to get simultaneously
-start_index = 5550
-end_index = 5650
+inversion_max_conc = 100 # max number of subsets to get simultaneously
+start_index = 5650
+end_index = 6250
 redo = true
 redo_keep_subset = false
 dbname = "/lustre/orion/geo111/scratch/lsawade/DB/GLAD-M25/128_single"
@@ -33,7 +33,7 @@ forward_nproc = 56
 forward_slurm_flags = "--mem=0 --exclusive -N1"
 subset_nproc = 4
 subset_slurm_flags = "-N1 --exclusive --mem=0"
-process_nproc = 56
+process_nproc = 26
 window_nproc = 56
 save_interval = 30
 retry_delay = 10
