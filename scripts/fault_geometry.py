@@ -15,7 +15,7 @@ from cmt3d import CMTCatalog
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-
+utils.updaterc()
 # %%
 # Make the catalogs to compare the events
 # gcmt_files = glob(os.path.join("events", "gcmt", "*"))
@@ -31,8 +31,9 @@ import matplotlib.gridspec as gridspec
 
 # %%
 # gcmt_cat.save("gcmtcatalog.pkl")
-gcmt_cat = CMTCatalog.load("gcmtcatalog.pkl")
-cmt3d_cat = cmt3d.CMTCatalog.from_file_list(glob("events/gcmt3d_fix/*"))
+gcmt_cat = CMTCatalog.from_file_list(glob("events/gcmt/*"))
+cmt3d_cat = cmt3d.CMTCatalog.from_file_list(glob("events/cmt3d/*"))
+cmt3dp_cat = cmt3d.CMTCatalog.from_file_list(glob("events/gcmt3d_fix/*"))
 
 
 # %%
@@ -206,7 +207,8 @@ def split_cat_mech_depth(
 
 
 depth_split_cat = split_cat_mech_depth(gcmt_cat)
-# depth_split_cat_cmt3d = split_cat_mech_depth(cmt3d_cat)
+depth_split_cat_cmt3d = split_cat_mech_depth(cmt3d_cat)
+depth_split_cat_cmt3dp = split_cat_mech_depth(cmt3dp_cat)
 
 
 # %%
@@ -308,8 +310,12 @@ def plot_split_cat_depth(
     return fig
 
 
+# %%
 fig = plot_split_cat_depth(depth_split_cat)
-
+fig.savefig("gcmt_depth_map_subselection.pdf")
+# %%
+fig = plot_split_cat_depth(depth_split_cat_cmt3dp)
+fig.savefig("cmt3d_depth_map_subselection.pdf")
 # %%
 # Use the catalog with the depth split to plot distributions of the DC vs. NDC
 # distributions, use gamma here
@@ -442,8 +448,8 @@ plot_split_gamma(depth_split_cat)
 ocat, ncat = gcmt_cat.check_ids(cmt3d_cat)
 
 # %%
-ocat_split = split_cat_mech_depth(ocat)
-ncat_split = split_cat_mech_depth(ncat)
+# ocat_split = split_cat_mech_depth(ocat)
+# ncat_split = split_cat_mech_depth(ncat)
 
 # %%
 x = """Takes in the catalog organized by depth and mechanism to plot the
@@ -514,6 +520,8 @@ def plot_split_gamma_compare(
                 bins=bins,
                 facecolor="lightgrey",
                 linewidth=0.75,
+                histtype="stepfilled",
+                edgecolor="none",
                 label=label,
             )
 
@@ -627,8 +635,32 @@ def plot_split_gamma_compare(
     plt.show(block=False)
 
 
-# plot_split_gamma_compare(ocat_split, compare_cat=ncat_split)
-# plt.savefig("gcmt_gamma_compare.pdf", transparent=True)
+# %%
+plot_split_gamma_compare(
+    depth_split_cat,
+    compare_cat=depth_split_cat_cmt3d,
+    label="GCMT",
+    compare_label="CMT3D",
+)
+plt.savefig("gcmt_cmt3d_gamma_compare.pdf", transparent=True)
+
+plot_split_gamma_compare(
+    depth_split_cat,
+    compare_cat=depth_split_cat_cmt3dp,
+    label="GCMT",
+    compare_label="CMT3D+",
+)
+plt.savefig("gcmt_cmt3d+_gamma_compare.pdf", transparent=True)
+
+# %%
+
+plot_split_gamma_compare(
+    depth_split_cat_cmt3d,
+    compare_cat=depth_split_cat_cmt3dp,
+    label="CMT3D",
+    compare_label="CMT3D+",
+)
+plt.savefig("cmt3d_cmt3d+_gamma_compare.pdf", transparent=True)
 
 
 # %%
