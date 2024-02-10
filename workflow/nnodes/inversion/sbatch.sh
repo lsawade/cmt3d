@@ -2,13 +2,14 @@
 # Begin SLURM Directives
 #SBATCH -A GEO111
 #SBATCH -t 02:00:00
-#SBATCH -N 100
+#SBATCH -N 65
 #SBATCH -J Inversion
 #SBATCH --mem=0
 #SBATCH --requeue
 # SBATCH -q debug
 #SBATCH --output=R-%x.%j.o.txt
 #SBATCH --error=R-%x.%j.e.txt
+#SBATCH --array=1-4%1
 #SBATCH --mail-type=end
 #SBATCH --mail-user=lsawade@princeton.com
 

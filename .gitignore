@@ -19,3 +19,4 @@ workflow/nnodes/inversion/*.png
 workflow/nnodes/testIO/events
 workflow/nnodes/testIO/tempfilelist.txt
 workflow/nnodes/LimitIO
+src/cmt3d/_version.py

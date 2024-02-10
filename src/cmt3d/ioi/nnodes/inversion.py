@@ -360,9 +360,9 @@ def iteration(node: Node):
     node.add(compute_descent)
 
     # Computes optimization parameters (Wolfe etc.)
-    node.add_mpi(f"cmt3d-ioi linesearch --it {node.it} --ls {node.step} {node.outdir}",
-                 exec_args={Slurm: '-N1 --time=1'},
-                 name="Compute-Optvals", nprocs=1, cwd=node.log, timeout=120, retry=3)
+    node.add(f"cmt3d-ioi linesearch --it {node.it} --ls {node.step} {node.outdir}",
+             name="Compute-Optvals",cwd=node.log, timeout=120, retry=3)
+             #nprocs=1, exec_args={Slurm: '-N1 --time=1'},
 
     # Runs actual linesearch
     node.add(linesearch, concurrent=False)
@@ -617,9 +617,8 @@ def window(node: Node):
 # Transer to next iteration
 def transfer_mcgh(node: Node):
     command = f"cmt3d-ioi model transfer --it {node.it} --ls {node.step} {node.outdir}"
-    node.add_mpi(command, name='Model-Transfer',
-                 nprocs=1, cwd=node.log, timeout=120, retry=3,
-                 exec_args={Slurm: '-N1 --time=1'})
+    node.add(command, name='Model-Transfer', cwd=node.log, timeout=120, retry=3)
+            #  exec_args={Slurm: '-N1 --time=5'})
 
 
 # -------------
@@ -628,7 +627,7 @@ def compute_weights(node: Node):
     command = f"cmt3d-ioi weights {node.outdir}"
     node.add_mpi(command, name='Compute-Weights',
                  nprocs=1, cwd=node.log, timeout=120, retry=3,
-                 exec_args={Slurm: '-N1 --time=1'})
+                 exec_args={Slurm: '-N1 --time=5'})
 
 # --------------------------------
 # Cost, Gradient, Hessian, Descent
@@ -694,7 +693,7 @@ def iteration_check(node: Node):
                                    name=f'Iteration-#{node.it+1:03d}')
         else:
             node.rm(os.path.join(node.outdir, 'meta', 'subset.h5'))
-            node.rm(os.path.join(node.outdir, 'logs', '*'))
+            # node.rm(os.path.join(node.outdir, 'logs', '*'))
             node.rm(os.path.join(node.outdir, 'INIT.txt'))
 
 
