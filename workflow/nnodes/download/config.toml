@@ -16,3 +16,5 @@ nproc = 20
 dbname = "/lustre/orion/geo111/scratch/lsawade/DB/GLAD-M25/128_single"
 db_is_local = true
 save_interval = 60
+start_index = 7450
+# end_index = 8050

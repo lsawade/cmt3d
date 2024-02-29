@@ -83,6 +83,9 @@ class CompareCatalogs:
         # Stations to be plotted alongside if defined
         self.stations = stations
 
+    def __len__(self):
+        return len(self.old)
+
     def populate(self):
         # Old and new values
         self.olatitude = self.old.getvals("latitude")
@@ -115,6 +118,9 @@ class CompareCatalogs:
 
         # Number of bins
         # Min max ddepth for cmt plotting
+        print("depth")
+        print(len(self.ndepth_in_m))
+        print(len(self.odepth_in_m))
         self.ddepth = (self.ndepth_in_m - self.odepth_in_m) / 1000.0
         self.maxddepth = np.max(self.ddepth)
         self.minddepth = np.min(self.ddepth)
@@ -1290,22 +1296,27 @@ class CompareCatalogs:
                 oldpoppedlist.append(oldlist.pop(_i))
                 newpoppedlist.append(newlist.pop(_i))
 
-        return (
-            CompareCatalogs(
+        filtered_cat = CompareCatalogs(
                 CMTCatalog(oldlist),
                 CMTCatalog(newlist),
                 oldlabel=self.oldlabel,
                 newlabel=self.newlabel,
                 nbins=self.nbins,
-            ),
-            CompareCatalogs(
+            )
+
+        if len(oldpoppedlist) == 0 or newpoppedlist == 0:
+            popped_cat = None
+        else:
+            popped_cat = CompareCatalogs(
                 CMTCatalog(oldpoppedlist),
                 CMTCatalog(newpoppedlist),
                 oldlabel=self.oldlabel,
                 newlabel=self.newlabel,
                 nbins=self.nbins,
             ),
-        )
+
+
+        return (filtered_cat, popped_cat)
 
     def print_paramater_change(self, param="depth_in_m"):
         # percentage parameters

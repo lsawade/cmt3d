@@ -23,9 +23,13 @@ gcmt3df_cat = cmt3d.CMTCatalog.from_file_list(gcmt3df_files)
 
 # %%
 
+
 gcmt_cmt3d = CompareCatalogs(old=gcmt____cat, new=cmt3d___cat,
                              oldlabel='GCMT', newlabel='CMT3D',
                              nbins=25)
+gcmt_gcmt3d = CompareCatalogs(old=gcmt____cat, new=gcmt3d__cat,
+                               oldlabel='GCMT', newlabel='CMT3D+',
+                               nbins=25)
 gcmt_gcmt3df = CompareCatalogs(old=gcmt____cat, new=gcmt3df_cat,
                                oldlabel='GCMT', newlabel='CMT3D+',
                                nbins=25)
@@ -33,14 +37,25 @@ cmt3d_gcmt3df = CompareCatalogs(old=cmt3d___cat, new=gcmt3df_cat,
                                 oldlabel='CMT3D', newlabel='CMT3D+',
                                 nbins=25)
 
+
+# %% Fix the catalogs
+maxdict_M0 = dict(M0=1.0)
+gcmt_cmt3d, _ = gcmt_cmt3d.filter(maxdict=maxdict_M0)
+gcmt_gcmt3d, _ = gcmt_gcmt3d.filter(maxdict=maxdict_M0)
+gcmt_gcmt3df, _ = gcmt_gcmt3df.filter(maxdict=maxdict_M0)
+cmt3d_gcmt3df, _ = cmt3d_gcmt3df.filter(maxdict=maxdict_M0)
+
+
 # %%
 if not os.path.exists('plots'):
     os.makedirs('plots')
 
 gcmt_cmt3d.plot_summary(outfile=os.path.join(
     'plots', "gcmt_cmt3d_comparison.pdf"))
-gcmt_gcmt3df.plot_summary(outfile=os.path.join(
+gcmt_gcmt3d.plot_summary(outfile=os.path.join(
     'plots', "gcmt_cmt3d+_comparison.pdf"))
+gcmt_gcmt3df.plot_summary(outfile=os.path.join(
+    'plots', "gcmt_cmt3d+x_comparison.pdf"))
 cmt3d_gcmt3df.plot_summary(outfile=os.path.join(
     'plots', "cmt3d_cmt3d+_comparison.pdf"))
 
@@ -61,10 +76,25 @@ for rname, r in ranges.items():
     gcmt_cmt3d = CompareCatalogs(old=fgcmt____cat, new=cmt3d___cat,
                         oldlabel='GCMT', newlabel='CMT3D',
                         nbins=25)
+    gcmt_gcmt3d = CompareCatalogs(old=fgcmt____cat, new=gcmt3d__cat,
+                                oldlabel='GCMT', newlabel='CMT3D+',
+                                nbins=25)
     gcmt_gcmt3df = CompareCatalogs(old=fgcmt____cat, new=gcmt3df_cat,
                                 oldlabel='GCMT', newlabel='CMT3D+',
                                 nbins=25)
+    print()
+    print(len(gcmt_cmt3d))
+    print(len(gcmt_gcmt3d))
+    print(len(gcmt_gcmt3df))
+
+    gcmt_cmt3d, _ = gcmt_cmt3d.filter(maxdict=maxdict_M0)
+    gcmt_gcmt3d, _ = gcmt_gcmt3d.filter(maxdict=maxdict_M0)
+    gcmt_gcmt3df, _ = gcmt_gcmt3df.filter(maxdict=maxdict_M0)
+
     gcmt_cmt3d.plot_summary(outfile=os.path.join(
         'plots', f"gcmt_cmt3d_comparison_{rname}.pdf"))
-    gcmt_gcmt3df.plot_summary(outfile=os.path.join(
+    gcmt_gcmt3d.plot_summary(outfile=os.path.join(
         'plots', f"gcmt_cmt3d+_comparison_{rname}.pdf"))
+    gcmt_gcmt3df.plot_summary(outfile=os.path.join(
+        'plots', f"gcmt_cmt3d+x_comparison_{rname}.pdf"))
+

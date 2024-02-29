@@ -28,6 +28,7 @@ merge_windows: True
 normalize: True
 weighting: True
 max_weight_ratio: 5.0
+min_windows: 30
 component_weights:
   R: 1.0
   T: 1.0

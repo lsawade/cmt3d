@@ -8,7 +8,7 @@ import cmt3d.ioi as ioi
 dbdir = "/lustre/orion/geo111/scratch/lsawade/gcmt/nnodes"
 outdirs = os.listdir(dbdir)
 outdirs.sort()
-outdirs = outdirs[4750:5700]
+# outdirs = outdirs[4750:5700]
 
 # %%
 

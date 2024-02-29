@@ -2,7 +2,7 @@
 # Begin SLURM Directives
 #SBATCH -A GEO111
 #SBATCH -t 02:00:00
-#SBATCH -N 65
+#SBATCH -N 40
 #SBATCH -J Inversion
 #SBATCH --mem=0
 #SBATCH --requeue

@@ -77,7 +77,7 @@ def compute_weights(outdir):
             weights[_wtype][_component]["lon"] = deepcopy(longitudes)
 
             # Get azimuthal weights for the traces of each component
-            if len(latitudes) > 1 and len(longitudes) > 2:
+            if len(latitudes) > 2 and len(longitudes) > 2:
                 aw = cmt3d.azi_weights(
                     cmtsource.latitude,
                     cmtsource.longitude,

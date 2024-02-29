@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J Download
-#SBATCH -t 6:00:00
+#SBATCH -t 12:00:00
 #SBATCH -N 1
 #SBATCH -o slurm.%J.o
 #SBATCH -e slurm.%J.e

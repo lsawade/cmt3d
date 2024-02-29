@@ -34,7 +34,7 @@ def bin(events, level='inversion'):
         removeidx = []
         for _i, _task in enumerate(_wf):
 
-            print('Event-Check', _i, _task.name)
+            # print('Event-Check', _i, _task.name)
 
             if _task.name in events:
                 pass

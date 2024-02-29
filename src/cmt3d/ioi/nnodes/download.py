@@ -26,6 +26,16 @@ def main(node: Node):
     # Sort the events
     events.sort()
 
+    # Filter by end index
+    if node.end_index:
+        print(f"Getting events until idx {node.end_index} ...")
+        events = events[:node.end_index]
+
+    # Filter by start index
+    if node.start_index:
+        print(f"Getting events from idx {node.start_index} ...")
+        events = events[node.start_index:]
+
     # The massdownloader suggest only 4 threads at a time. So here
     # we are doing 4 simultaneous events with each 1 thread
     event_chunks = cmt3d.chunkfunc(events, 4)
@@ -47,7 +57,7 @@ def download_chunk(node: Node):
 
         # Get data
         command = f"cmt3d-ioi download {node.inputfile} {eventfilename}"
-        node.add_mpi(command, name=eventname,
+        node.add_mpi(command, name=eventname, retry=3,
                      cwd=os.path.join(downdir, "nnodes"))
 
 # ----------------------------------------------------------------------------

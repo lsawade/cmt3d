@@ -192,6 +192,8 @@ def process_data_wave_mpi(outdir, wavetype, verbose=True):
 
     if verbose and rank == 0:
         print("-> Starting the processing")
+        print("Total number of traces: ", len(data))
+        print("Total number of station: ", len(data))
 
     pdata = oprc.mpi_process_stream(data, tprocessdict, verbose=verbose)
 
@@ -816,6 +818,13 @@ def check_window_count(outdir: str):
     # Get processing parameters
     processdict = cmt3d.read_yaml(os.path.join(outdir, 'process.yml'))
 
+    # Get input configuration
+    inputparams = cmt3d.read_yaml(os.path.join(outdir, 'input.yml'))
+
+    # Minimum number of windows
+    min_windows = inputparams.get("min_windows", 50)
+
+    # Window dictionary
     win_dict = dict()
 
     # Loop over wavetypes
@@ -827,10 +836,10 @@ def check_window_count(outdir: str):
             if hasattr(tr.stats, "windows"):
                 win_dict[wavetype] += len(tr.stats.windows)
 
-    if sum([value for value in win_dict.values()]) < 50:
-        write_status(outdir, "FAIL: Total number of windows less than 50.")
+    if sum([value for value in win_dict.values()]) < min_windows:
+        write_status(outdir, f"FAIL: Total number of windows less than {min_windows}.")
     else:
-        write_status(outdir, "INVERT: Total number of windows more than 50.")
+        write_status(outdir, f"INVERT: Total number of windows more than {min_windows}.")
 
     # Write window dictionary to log
     message = "Windows:\n"
