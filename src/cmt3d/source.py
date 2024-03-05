@@ -15,8 +15,7 @@ Source and Receiver classes of Instaseis.
     (http://www.gnu.org/copyleft/lgpl.html)
 
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function, unicode_literals
 import io
 import numpy as np
 import typing as tp
@@ -36,12 +35,27 @@ class CMTSource(object):
     """
 
     def __init__(
-            self, origin_time: UTCDateTime = UTCDateTime(0),
-            pde_latitude=0.0, pde_longitude=0.0, mb=0.0, ms=0.0,
-            pde_depth_in_m=0.0, region_tag='', eventname='',
-            cmt_time: tp.Union[UTCDateTime, float] = UTCDateTime(0),
-            half_duration=0.0, latitude=0.0, longitude=0.0, depth_in_m=0.0,
-            m_rr=0.0, m_tt=0.0, m_pp=0.0, m_rt=0.0, m_rp=0.0, m_tp=0.0):
+        self,
+        origin_time: UTCDateTime = UTCDateTime(0),
+        pde_latitude=0.0,
+        pde_longitude=0.0,
+        mb=0.0,
+        ms=0.0,
+        pde_depth_in_m=0.0,
+        region_tag="",
+        eventname="",
+        cmt_time: tp.Union[UTCDateTime, float] = UTCDateTime(0),
+        half_duration=0.0,
+        latitude=0.0,
+        longitude=0.0,
+        depth_in_m=0.0,
+        m_rr=0.0,
+        m_tt=0.0,
+        m_pp=0.0,
+        m_rt=0.0,
+        m_rp=0.0,
+        m_tp=0.0,
+    ):
         """
         :param latitude: latitude of the source in degree
         :param longitude: longitude of the source in degree
@@ -90,13 +104,11 @@ class CMTSource(object):
         with open(filename, "rt") as f:
             line = f.readline()
             origin_time = line[5:].strip().split()[:6]
-            values = list(map(int, origin_time[:-1])) \
-                + [float(origin_time[-1])]
+            values = list(map(int, origin_time[:-1])) + [float(origin_time[-1])]
             try:
                 origin_time = UTCDateTime(*values)
             except (TypeError, ValueError):
-                warnings.warn("Could not determine origin time from line: %s"
-                              % line)
+                warnings.warn("Could not determine origin time from line: %s" % line)
                 origin_time = UTCDateTime(0)
             otherinfo = line[4:].strip().split()[6:]
             pde_lat = float(otherinfo[0])
@@ -104,7 +116,7 @@ class CMTSource(object):
             pde_depth_in_m = float(otherinfo[2]) * 1e3
             mb = float(otherinfo[3])
             ms = float(otherinfo[4])
-            region_tag = ' '.join(otherinfo[5:])
+            region_tag = " ".join(otherinfo[5:])
 
             eventname = f.readline().strip().split()[-1]
             time_shift = float(f.readline().strip().split()[-1])
@@ -122,14 +134,27 @@ class CMTSource(object):
             m_rp = float(f.readline().strip().split()[-1])  # / 1e7
             m_tp = float(f.readline().strip().split()[-1])  # / 1e7
 
-        return cls(origin_time=origin_time,
-                   pde_latitude=pde_lat, pde_longitude=pde_lon, mb=mb, ms=ms,
-                   pde_depth_in_m=pde_depth_in_m, region_tag=region_tag,
-                   eventname=eventname, cmt_time=cmt_time,
-                   half_duration=half_duration, latitude=latitude,
-                   longitude=longitude, depth_in_m=depth_in_m,
-                   m_rr=m_rr, m_tt=m_tt, m_pp=m_pp, m_rt=m_rt,
-                   m_rp=m_rp, m_tp=m_tp)
+        return cls(
+            origin_time=origin_time,
+            pde_latitude=pde_lat,
+            pde_longitude=pde_lon,
+            mb=mb,
+            ms=ms,
+            pde_depth_in_m=pde_depth_in_m,
+            region_tag=region_tag,
+            eventname=eventname,
+            cmt_time=cmt_time,
+            half_duration=half_duration,
+            latitude=latitude,
+            longitude=longitude,
+            depth_in_m=depth_in_m,
+            m_rr=m_rr,
+            m_tt=m_tt,
+            m_pp=m_pp,
+            m_rt=m_rt,
+            m_rp=m_rp,
+            m_tp=m_tp,
+        )
 
     @classmethod
     def from_quakeml_file(cls, filename: str):
@@ -165,18 +190,16 @@ class CMTSource(object):
         r = np.radians(r)
 
         # Fault normal
-        n = np.array([
-            - np.sin(d) * np.sin(s),
-            + np.sin(d) * np.cos(s),
-            - np.cos(d)
-        ])
+        n = np.array([-np.sin(d) * np.sin(s), +np.sin(d) * np.cos(s), -np.cos(d)])
 
         # Slip vector
-        d = np.array([
-            np.cos(r) * np.cos(s) + np.cos(d) * np.sin(r) * np.sin(s),
-            np.cos(r) * np.sin(s) - np.cos(d) * np.sin(r) * np.cos(s),
-            - np.sin(r) * np.sin(d)
-        ])
+        d = np.array(
+            [
+                np.cos(r) * np.cos(s) + np.cos(d) * np.sin(r) * np.sin(s),
+                np.cos(r) * np.sin(s) - np.cos(d) * np.sin(r) * np.cos(s),
+                -np.sin(r) * np.sin(d),
+            ]
+        )
 
         # Compute moment tensor Stein and Wysession Style
         Mx = M0 * (np.outer(n, d) + np.outer(d, n))
@@ -201,20 +224,28 @@ class CMTSource(object):
         #     [Mxz, Myz, Mzz]
         # ])
 
-        Mr = np.array([
-            [Mx[2, 2],  Mx[2, 0], -Mx[2, 1]],
-            [Mx[0, 2],  Mx[0, 0], -Mx[0, 1]],
-            [-Mx[1, 2], -Mx[1, 0],  Mx[1, 1]],
-        ])
+        Mr = np.array(
+            [
+                [Mx[2, 2], Mx[2, 0], -Mx[2, 1]],
+                [Mx[0, 2], Mx[0, 0], -Mx[0, 1]],
+                [-Mx[1, 2], -Mx[1, 0], Mx[1, 1]],
+            ]
+        )
 
-        return cls(m_rr=Mr[0, 0], m_tt=Mr[1, 1], m_pp=Mr[2, 2], m_rt=Mr[0, 1],
-                   m_rp=Mr[0, 2], m_tp=Mr[1, 2])
+        return cls(
+            m_rr=Mr[0, 0],
+            m_tt=Mr[1, 1],
+            m_pp=Mr[2, 2],
+            m_rt=Mr[0, 1],
+            m_rp=Mr[0, 2],
+            m_tp=Mr[1, 2],
+        )
 
     @classmethod
     def from_event(cls, event: Event):
 
         for origin in event.origins:
-            if origin.origin_type == 'centroid':
+            if origin.origin_type == "centroid":
                 cmtsolution = origin
             else:
                 pdesolution = origin
@@ -246,8 +277,9 @@ class CMTSource(object):
                 eventname = ""
         cmt_time = cmtsolution.time
         focal_mechanism = event.focal_mechanisms[0]
-        half_duration = \
-            focal_mechanism.moment_tensor.source_time_function.duration/2.0
+        half_duration = (
+            focal_mechanism.moment_tensor.source_time_function.duration / 2.0
+        )
         latitude = cmtsolution.latitude
         longitude = cmtsolution.longitude
         depth_in_m = cmtsolution.depth
@@ -259,19 +291,32 @@ class CMTSource(object):
         m_rp = tensor.m_rp * 1e7
         m_tp = tensor.m_tp * 1e7
 
-        return cls(origin_time=origin_time,
-                   pde_latitude=pde_lat, pde_longitude=pde_lon, mb=mb, ms=ms,
-                   pde_depth_in_m=pde_depth_in_m, region_tag=region_tag,
-                   eventname=eventname, cmt_time=cmt_time,
-                   half_duration=half_duration, latitude=latitude,
-                   longitude=longitude, depth_in_m=depth_in_m,
-                   m_rr=m_rr, m_tt=m_tt, m_pp=m_pp, m_rt=m_rt,
-                   m_rp=m_rp, m_tp=m_tp)
+        return cls(
+            origin_time=origin_time,
+            pde_latitude=pde_lat,
+            pde_longitude=pde_lon,
+            mb=mb,
+            ms=ms,
+            pde_depth_in_m=pde_depth_in_m,
+            region_tag=region_tag,
+            eventname=eventname,
+            cmt_time=cmt_time,
+            half_duration=half_duration,
+            latitude=latitude,
+            longitude=longitude,
+            depth_in_m=depth_in_m,
+            m_rr=m_rr,
+            m_tt=m_tt,
+            m_pp=m_pp,
+            m_rt=m_rt,
+            m_rp=m_rp,
+            m_tp=m_tp,
+        )
 
     def to_event(self) -> Event:
         """returns obspy event"""
         with io.BytesIO() as f:
-            f.write(self.__str__().encode('utf-8'))
+            f.write(self.__str__().encode("utf-8"))
             f.seek(0)
             ev = read_events(f)[0]
         return ev
@@ -307,14 +352,27 @@ class CMTSource(object):
         m_rp = d["m_rp"]
         m_tp = d["m_tp"]
 
-        return cls(origin_time=origin_time,
-                   pde_latitude=pde_lat, pde_longitude=pde_lon, mb=mb, ms=ms,
-                   pde_depth_in_m=pde_depth_in_m, region_tag=region_tag,
-                   eventname=eventname, cmt_time=cmt_time,
-                   half_duration=half_duration, latitude=latitude,
-                   longitude=longitude, depth_in_m=depth_in_m,
-                   m_rr=m_rr, m_tt=m_tt, m_pp=m_pp, m_rt=m_rt,
-                   m_rp=m_rp, m_tp=m_tp)
+        return cls(
+            origin_time=origin_time,
+            pde_latitude=pde_lat,
+            pde_longitude=pde_lon,
+            mb=mb,
+            ms=ms,
+            pde_depth_in_m=pde_depth_in_m,
+            region_tag=region_tag,
+            eventname=eventname,
+            cmt_time=cmt_time,
+            half_duration=half_duration,
+            latitude=latitude,
+            longitude=longitude,
+            depth_in_m=depth_in_m,
+            m_rr=m_rr,
+            m_tt=m_tt,
+            m_pp=m_pp,
+            m_rt=m_rt,
+            m_rp=m_rp,
+            m_tp=m_tp,
+        )
 
     def to_row(self):
         """Returns a tuple of all parameters to append it to a
@@ -338,7 +396,7 @@ class CMTSource(object):
             self.m_pp,
             self.m_rt,
             self.m_rp,
-            self.m_tp
+            self.m_tp,
         )
 
     def write_CMTSOLUTION_file(self, filename, mode="w"):
@@ -351,41 +409,48 @@ class CMTSource(object):
             # hypocentral information is missing.
             f.write(
                 " PDE %4i %2i %2i %2i %2i %5.2f %8.4f %9.4f %5.1f %.1f %.1f"
-                " %s\n" % (
+                " %s\n"
+                % (
                     self.origin_time.year,
                     self.origin_time.month,
                     self.origin_time.day,
                     self.origin_time.hour,
                     self.origin_time.minute,
-                    self.origin_time.second
-                    + self.origin_time.microsecond / 1E6,
+                    self.origin_time.second + self.origin_time.microsecond / 1e6,
                     self.pde_latitude,
                     self.pde_longitude,
                     self.pde_depth_in_m / 1e3,
                     self.mb,
                     self.ms,
-                    str(self.region_tag)))
-            f.write('event name:     %s\n' % (str(self.eventname)))
-            f.write('time shift:%12.4f\n' % (self.time_shift,))
-            f.write('half duration:%9.4f\n' % (self.half_duration,))
-            f.write('latitude:%14.4f\n' % (self.latitude,))
-            f.write('longitude:%13.4f\n' % (self.longitude,))
-            f.write('depth:%17.4f\n' % (self.depth_in_m / 1e3,))
-            f.write('Mrr:%19.6e\n' % self.m_rr)  # * 1e7,))
-            f.write('Mtt:%19.6e\n' % self.m_tt)  # * 1e7,))
-            f.write('Mpp:%19.6e\n' % self.m_pp)  # * 1e7,))
-            f.write('Mrt:%19.6e\n' % self.m_rt)  # * 1e7,))
-            f.write('Mrp:%19.6e\n' % self.m_rp)  # * 1e7,))
-            f.write('Mtp:%19.6e\n' % self.m_tp)  # * 1e7,))
+                    str(self.region_tag),
+                )
+            )
+            f.write("event name:     %s\n" % (str(self.eventname)))
+            f.write("time shift:%12.4f\n" % (self.time_shift,))
+            f.write("half duration:%9.4f\n" % (self.half_duration,))
+            f.write("latitude:%14.4f\n" % (self.latitude,))
+            f.write("longitude:%13.4f\n" % (self.longitude,))
+            f.write("depth:%17.4f\n" % (self.depth_in_m / 1e3,))
+            f.write("Mrr:%19.6e\n" % self.m_rr)  # * 1e7,))
+            f.write("Mtt:%19.6e\n" % self.m_tt)  # * 1e7,))
+            f.write("Mpp:%19.6e\n" % self.m_pp)  # * 1e7,))
+            f.write("Mrt:%19.6e\n" % self.m_rt)  # * 1e7,))
+            f.write("Mrp:%19.6e\n" % self.m_rp)  # * 1e7,))
+            f.write("Mtp:%19.6e\n" % self.m_tp)  # * 1e7,))
 
     @property
     def M0(self):
         """
         Scalar Moment M0 in Nm
         """
-        return (self.m_rr ** 2 + self.m_tt ** 2 + self.m_pp ** 2
-                + 2 * self.m_rt ** 2 + 2 * self.m_rp ** 2
-                + 2 * self.m_tp ** 2) ** 0.5 * 0.5 ** 0.5
+        return (
+            self.m_rr**2
+            + self.m_tt**2
+            + self.m_pp**2
+            + 2 * self.m_rt**2
+            + 2 * self.m_rp**2
+            + 2 * self.m_tp**2
+        ) ** 0.5 * 0.5**0.5
 
     @M0.setter
     def M0(self, M0):
@@ -394,7 +459,7 @@ class CMTSource(object):
         """
         iM0 = self.M0
         fM0 = M0
-        factor = fM0/iM0
+        factor = fM0 / iM0
         self.m_rr *= factor
         self.m_tt *= factor
         self.m_pp *= factor
@@ -410,7 +475,7 @@ class CMTSource(object):
         Moment magnitude M_w
         """
         # =  (log Mo - 9.1) / 1.5 = (2/3) * (log Mo - 9.1)
-        return 2/3 * np.log10(7 + self.M0) - 10.73
+        return 2 / 3 * np.log10(7 + self.M0) - 10.73
 
     @property
     def time_shift(self):
@@ -429,8 +494,9 @@ class CMTSource(object):
         List of moment tensor components in r, theta, phi coordinates:
         [m_rr, m_tt, m_pp, m_rt, m_rp, m_tp]
         """
-        return np.array([self.m_rr, self.m_tt, self.m_pp, self.m_rt, self.m_rp,
-                         self.m_tp])
+        return np.array(
+            [self.m_rr, self.m_tt, self.m_pp, self.m_rt, self.m_rp, self.m_tp]
+        )
 
     @tensor.setter
     def tensor(self, tensor):
@@ -452,15 +518,34 @@ class CMTSource(object):
         """
         ndarray of full moment tensor components in r, theta, phi coordinates:
         """
-        return np.array([[self.m_rr, self.m_rt, self.m_rp],
-                         [self.m_rt, self.m_tt, self.m_tp],
-                         [self.m_rp, self.m_tp, self.m_pp]])
+        return np.array(
+            [
+                [self.m_rr, self.m_rt, self.m_rp],
+                [self.m_rt, self.m_tt, self.m_tp],
+                [self.m_rp, self.m_tp, self.m_pp],
+            ]
+        )
+
+    @fulltensor.setter
+    def fulltensor(self, tensor):
+        """
+        ndarray of full moment tensor components in r, theta, phi coordinates:
+        """
+        self.m_rr = tensor[0, 0]
+        self.m_tt = tensor[1, 1]
+        self.m_pp = tensor[2, 2]
+        self.m_rt = tensor[0, 1]
+        self.m_rp = tensor[0, 2]
+        self.m_tp = tensor[1, 2]
+
+        self.update_hdur()
 
     def update_hdur(self):
         # Updates the half duration
         Nm_conv = 1 / 1e7
         self.half_duration = np.round(
-            2.26 * 10**(-6) * (self.M0 * Nm_conv)**(1/3), decimals=1)
+            2.26 * 10 ** (-6) * (self.M0 * Nm_conv) ** (1 / 3), decimals=1
+        )
 
     @property
     def pbt(self):
@@ -508,7 +593,7 @@ class CMTSource(object):
         _, _, _, _, _, _, plungs, azims = self.eqpar
         return [[plungs[i], azims[i]] for i in range(3)]
 
-    @ staticmethod
+    @staticmethod
     def normal2sd(normal):
         """Compute strike and dip from normal
 
@@ -523,9 +608,10 @@ class CMTSource(object):
         # strike = np.mod(strike, 2*np.pi)
 
         # dip
-        dip = np.arctan2((normal[1]**2+normal[0]**2),
-                         np.sqrt((normal[0]*normal[2])**2 + \
-                             (normal[1]*normal[2])**2))
+        dip = np.arctan2(
+            (normal[1] ** 2 + normal[0] ** 2),
+            np.sqrt((normal[0] * normal[2]) ** 2 + (normal[1] * normal[2]) ** 2),
+        )
         # dip = np.arccos(normal[2]/np.sqrt(np.sum(normal**2)))
 
         return strike, dip
@@ -551,12 +637,10 @@ class CMTSource(object):
         """
 
         # Get possible decompositions
-        dtypes = [func for func, _ in getmembers(
-            sourcedecomposition, isfunction)]
+        dtypes = [func for func, _ in getmembers(sourcedecomposition, isfunction)]
 
         if dtype not in dtypes:
-            raise ValueError(
-                f"{dtype} not implemented. Possible dtypes are: {dtypes}")
+            raise ValueError(f"{dtype} not implemented. Possible dtypes are: {dtypes}")
 
         # Get function from the module
         decompfunc = getattr(sourcedecomposition, dtype)
@@ -569,37 +653,39 @@ class CMTSource(object):
         # Reconstruct the first line as well as possible. All
         # hypocentral information is missing.
         if isinstance(self.origin_time, UTCDateTime):
-            return_str = \
-                " PDE %4i %2i %2i %2i %2i %5.2f %8.4f %9.4f %5.1f %.1f %.1f" \
-                " %s\n" % (
+            return_str = (
+                " PDE %4i %2i %2i %2i %2i %5.2f %8.4f %9.4f %5.1f %.1f %.1f"
+                " %s\n"
+                % (
                     self.origin_time.year,
                     self.origin_time.month,
                     self.origin_time.day,
                     self.origin_time.hour,
                     self.origin_time.minute,
-                    self.origin_time.second
-                    + self.origin_time.microsecond / 1E6,
+                    self.origin_time.second + self.origin_time.microsecond / 1e6,
                     self.pde_latitude,
                     self.pde_longitude,
                     self.pde_depth_in_m / 1e3,
                     self.mb,
                     self.ms,
-                    self.region_tag)
+                    self.region_tag,
+                )
+            )
         else:
             return_str = "----- CMT Delta: ------- \n"
 
-        return_str += 'event name:  %10s\n' % (str(self.eventname),)
-        return_str += 'time shift:%12.4f\n' % (self.time_shift,)
-        return_str += 'half duration:%9.4f\n' % (self.half_duration,)
-        return_str += 'latitude:%14.4f\n' % (self.latitude,)
-        return_str += 'longitude:%13.4f\n' % (self.longitude,)
-        return_str += 'depth:%17.4f\n' % (self.depth_in_m / 1e3,)
-        return_str += 'Mrr:%19.6e\n' % self.m_rr  # * 1e7,))
-        return_str += 'Mtt:%19.6e\n' % self.m_tt  # * 1e7,))
-        return_str += 'Mpp:%19.6e\n' % self.m_pp  # * 1e7,))
-        return_str += 'Mrt:%19.6e\n' % self.m_rt  # * 1e7,))
-        return_str += 'Mrp:%19.6e\n' % self.m_rp  # * 1e7,))
-        return_str += 'Mtp:%19.6e\n' % self.m_tp  # * 1e7,))
+        return_str += "event name:  %10s\n" % (str(self.eventname),)
+        return_str += "time shift:%12.4f\n" % (self.time_shift,)
+        return_str += "half duration:%9.4f\n" % (self.half_duration,)
+        return_str += "latitude:%14.4f\n" % (self.latitude,)
+        return_str += "longitude:%13.4f\n" % (self.longitude,)
+        return_str += "depth:%17.4f\n" % (self.depth_in_m / 1e3,)
+        return_str += "Mrr:%19.6e\n" % self.m_rr  # * 1e7,))
+        return_str += "Mtt:%19.6e\n" % self.m_tt  # * 1e7,))
+        return_str += "Mpp:%19.6e\n" % self.m_pp  # * 1e7,))
+        return_str += "Mrt:%19.6e\n" % self.m_rt  # * 1e7,))
+        return_str += "Mrp:%19.6e\n" % self.m_rp  # * 1e7,))
+        return_str += "Mtp:%19.6e\n" % self.m_tp  # * 1e7,))
 
         return return_str
 
@@ -610,7 +696,7 @@ class CMTSource(object):
         return len(self.__dict__)
 
     def __iter__(self):
-        """ Making the class iterable through key,value pairs. """
+        """Making the class iterable through key,value pairs."""
         # first start by grabbing the Class items
         iters = self.__dict__.items()
 
@@ -619,7 +705,7 @@ class CMTSource(object):
             yield x
 
     def __getitem__(self, item):
-        """ Making the CMT Source subscriptable with indeces."""
+        """Making the CMT Source subscriptable with indeces."""
         return self.__dict__[item]
 
     def __eq__(self, other):
@@ -637,7 +723,7 @@ class CMTSource(object):
         return id1 == id2
 
     def __sub__(self, other):
-        """ USE WITH CAUTION!!
+        """USE WITH CAUTION!!
         -> Origin time becomes float of delta t
         -> centroid time becomes float of delta t
         -> half duration is weird to compare like this as well.
@@ -646,8 +732,7 @@ class CMTSource(object):
         """
 
         if not self.same_eventids(self.eventname, other.eventname):
-            raise ValueError(
-                'CMTSource.eventname must be equal to compare the events')
+            raise ValueError("CMTSource.eventname must be equal to compare the events")
 
         # The origin time is the most problematic part
         origin_time = self.origin_time - other.origin_time
@@ -672,9 +757,22 @@ class CMTSource(object):
 
         return CMTSource(
             origin_time=origin_time,
-            pde_latitude=pde_latitude, pde_longitude=pde_longitude, mb=mb,
-            ms=ms, pde_depth_in_m=pde_depth_in_m, region_tag=region_tag,
-            eventname=eventame, cmt_time=cmt_time, half_duration=half_duration,
-            latitude=latitude, longitude=longitude, depth_in_m=depth_in_m,
-            m_rr=m_rr, m_tt=m_tt, m_pp=m_pp, m_rt=m_rt, m_rp=m_rp, m_tp=m_tp)
-
+            pde_latitude=pde_latitude,
+            pde_longitude=pde_longitude,
+            mb=mb,
+            ms=ms,
+            pde_depth_in_m=pde_depth_in_m,
+            region_tag=region_tag,
+            eventname=eventame,
+            cmt_time=cmt_time,
+            half_duration=half_duration,
+            latitude=latitude,
+            longitude=longitude,
+            depth_in_m=depth_in_m,
+            m_rr=m_rr,
+            m_tt=m_tt,
+            m_pp=m_pp,
+            m_rt=m_rt,
+            m_rp=m_rp,
+            m_tp=m_tp,
+        )

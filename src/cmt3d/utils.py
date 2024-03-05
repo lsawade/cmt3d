@@ -5,13 +5,23 @@ import pickle as pickle
 import yaml
 
 
+def get_comm_rank_size():
+    import mpi4py.MPI as MPI
+
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    return comm, rank, size
+
+
 def write_pickle(filename, obj):
-    with open(filename, 'wb') as f:
+    with open(filename, "wb") as f:
         pickle.dump(obj, f)
 
 
 def read_pickle(filename):
-    with open(filename, 'rb') as f:
+    with open(filename, "rb") as f:
         obj = pickle.load(f)
 
     return obj
@@ -19,18 +29,19 @@ def read_pickle(filename):
 
 def read_yaml(filename: str):
     """Read a yaml file"""
-    with open(filename, 'r') as f:
+    with open(filename, "r") as f:
         return yaml.load(f, Loader=yaml.FullLoader)
 
 
 def write_yaml(data: dict, filename: str):
     """Write a yaml file"""
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         yaml.dump(data, f)
 
 
-def sec2hhmmss(seconds: float, roundsecs: bool = True) \
-        -> tp.Tuple[int, int, float | int]:
+def sec2hhmmss(
+    seconds: float, roundsecs: bool = True
+) -> tp.Tuple[int, int, float | int]:
     """Turns seconds into tuple of (hours, minutes, seconds)
 
     Parameters
@@ -60,7 +71,7 @@ def sec2hhmmss(seconds: float, roundsecs: bool = True) \
     mm = int((seconds - hh * 3600) // 60)
 
     # Get seconds
-    ss = (seconds - hh * 3600 - mm * 60)
+    ss = seconds - hh * 3600 - mm * 60
 
     if roundsecs:
         ss = round(ss)
@@ -86,7 +97,7 @@ def sec2timestamp(seconds: float) -> str:
     return f"{int(hh):02} h {int(mm):02} m {int(ss):02} s"
 
 
-class retry():
+class retry:
     """
     Decorator that will keep retrying the operation after a timeout.
 
@@ -103,14 +114,14 @@ class retry():
                 try:
                     retval = f(*args, **kwargs)
                 except Exception as e:
-                    print(f'Retry caught exception try {i+1}/{self.retries}')
+                    print(f"Retry caught exception try {i+1}/{self.retries}")
                     print(e)
                     time.sleep(self.wait_time)
                     continue
                 else:
                     return retval
 
-            raise ValueError(f'Failed after {self.retries} retries.')
+            raise ValueError(f"Failed after {self.retries} retries.")
 
         return wrapped_f
 
@@ -129,4 +140,4 @@ def chunkfunc(sequence: tp.Sequence, n: int):
     length of the sequence
     """
     n = max(1, n)
-    return [sequence[i:i+n] for i in range(0, len(sequence), n)]
+    return [sequence[i : i + n] for i in range(0, len(sequence), n)]
