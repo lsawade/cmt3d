@@ -262,6 +262,84 @@ class CompareCatalogs:
 
         return ogamma, ngamma
 
+    def plot_gamma(self):
+
+        # Get axes
+        ax = plt.gca()
+
+        bins = np.arange(-0.5, 0.50001, 0.025)
+
+        # Get gamma
+        ogamma, ngamma = self.gamma()
+
+        # Plot histogram GCMT3D
+        bins = np.histogram_bin_edges(
+                ogamma, bins="auto", range=(-np.pi / 6, np.pi / 6)
+            )
+
+        # Plot histogram GCMT3D
+        plt.hist(
+            ogamma,
+            bins=bins,
+            edgecolor="none",
+            facecolor="lightgrey",
+            linewidth=0.75,
+            label=self.oldlabel,
+            histtype="stepfilled",
+        )
+
+        # Plot histogram GCMT3D+
+        plt.hist(
+            ngamma,
+            bins=bins,
+            edgecolor="k",
+            facecolor="none",
+            linewidth=0.75,
+            label=self.newlabel,
+            histtype="stepfilled",
+        )
+        plt.legend(
+            loc="upper left",
+            frameon=False,
+            fancybox=False,
+            numpoints=1,
+            scatterpoints=1,
+            fontsize="x-small",
+            borderaxespad=0.0,
+            borderpad=0.5,
+            handletextpad=0.2,
+            labelspacing=0.2,
+            handlelength=1.0,
+            bbox_to_anchor=(0.0, 1.0),
+        )
+
+        # Plot stats label
+        label = (
+            f"{self.oldlabel}\n"
+            f"$\\mu$ = {np.mean(self.oeps_nu[:,0]):7.4f}\n"
+            f"$\\sigma$ = {np.std(self.oeps_nu[:,0]):7.4f}\n"
+            f"{self.newlabel}\n"
+            f"$\\mu$ = {np.mean(self.neps_nu[:,0]):7.4f}\n"
+            f"$\\sigma$ = {np.std(self.neps_nu[:,0]):7.4f}\n"
+        )
+        utils.plot_label(
+            ax,
+            label,
+            location=2,
+            box=False,
+            fontdict=dict(fontsize="xx-small", fontfamily="monospace"),
+        )
+        utils.plot_label(
+            ax, "CLVD-", location=6, box=False, fontdict=dict(fontsize="small")
+        )
+        utils.plot_label(
+            ax, "CLVD+", location=7, box=False, fontdict=dict(fontsize="small")
+        )
+        utils.plot_label(
+            ax, "DC", location=14, box=False, fontdict=dict(fontsize="small")
+        )
+        plt.xlabel(r"$\gamma$")
+
     def plot_omega_gamma_figure(self):
         angles = self.omega_angle()
         ogamma, ngamma = self.gamma()
@@ -320,7 +398,7 @@ class CompareCatalogs:
         )
 
         # Labels
-        lplt.plot_label(
+        utils.plot_label(
             axes[0],
             "a)",
             location=18,
@@ -328,7 +406,7 @@ class CompareCatalogs:
             dist=0.025,
             fontdict=dict(fontsize="small"),
         )
-        lplt.plot_label(
+        utils.plot_label(
             axes[0],
             "Angular Change in Moment Tensor",
             location=14,
@@ -378,7 +456,7 @@ class CompareCatalogs:
         axes[1].xaxis.set_major_formatter(major.formatter)
 
         # Plot Axes, DC, CLVD labels
-        lplt.plot_label(
+        utils.plot_label(
             axes[1],
             "b)",
             location=18,
@@ -386,7 +464,7 @@ class CompareCatalogs:
             dist=0.025,
             fontdict=dict(fontsize="small"),
         )
-        lplt.plot_label(
+        utils.plot_label(
             axes[1],
             "CLVD-",
             location=6,
@@ -394,7 +472,7 @@ class CompareCatalogs:
             dist=0.01,
             fontdict=dict(fontsize="small"),
         )
-        lplt.plot_label(
+        utils.plot_label(
             axes[1],
             "CLVD+",
             location=7,
@@ -402,7 +480,7 @@ class CompareCatalogs:
             dist=0.01,
             fontdict=dict(fontsize="small"),
         )
-        lplt.plot_label(
+        utils.plot_label(
             axes[1],
             "DC",
             location=14,
@@ -773,7 +851,8 @@ class CompareCatalogs:
 
         # Plot eps_nu change
         ax = fig.add_subplot(GS[0, 2])
-        self.plot_eps_nu()
+        # self.plot_eps_nu()
+        self.plot_gamma()
         utils.plot_label(ax, "b)", location=17, box=False)
 
         # Plot Depth v dDepth
