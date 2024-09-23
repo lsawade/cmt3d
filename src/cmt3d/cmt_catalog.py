@@ -616,6 +616,14 @@ class CMTCatalog:
         else:
             return CMTCatalog(cmts)
 
+    def find_event(self, origin_time: obspy.UTCDateTime):
+        """Find event in catalog by origin time"""
+
+        difftimes = np.abs(self.getvals("origin_time") - origin_time)
+        minindex = np.argmin(difftimes)
+
+        return self.cmts[minindex]
+
     def cmts2dir(self, outdir: str = "./newcatalog"):
         # Create dir if doesn't exist.
         if os.path.exists(outdir) is False:

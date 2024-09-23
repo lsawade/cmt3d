@@ -26,6 +26,8 @@ from . import sourcedecomposition
 from inspect import getmembers, isfunction
 from .eqpar import eqpar
 import matplotlib.pyplot as plt
+from scipy.spatial.transform import Rotation as R
+from .lune_utils import get_lune_coordinates
 
 
 class CMTSource(object):
@@ -570,6 +572,48 @@ class CMTSource(object):
         return ep[4], ep[5]
 
     @property
+    def eigenvalues(self):
+        """Returns the eigenvalues of the moment tensor"""
+        ep = self.eqpar
+        return ep[4]
+
+    @property
+    def lambda1(self):
+        """Returns the largest eigenvalue of the moment tensor"""
+        return self.eigenvalues[0]
+
+    @property
+    def lambda2(self):
+        """Returns the middle eigenvalue of the moment tensor"""
+        return self.eigenvalues[1]
+
+    @property
+    def lambda3(self):
+        """Returns the middle eigenvalue of the moment tensor"""
+        return self.eigenvalues[2]
+
+    @property
+    def mtype(
+        self,
+        thrust_tension_plunge_threshold: float = 50,
+        normal_pressure_plunge_threshold: float = 50,
+        strike_slip_null_plunge_threshold: float = 20,
+    ):
+        # Get plunge of the TBP axes
+        PT, PB, PP = self.eqpar[6]
+
+        if PP > normal_pressure_plunge_threshold:
+            mech = "normal"
+        elif PT > thrust_tension_plunge_threshold:
+            mech = "thrust"
+        elif PB > strike_slip_null_plunge_threshold:
+            mech = "strike-slip"
+        else:
+            mech = "unknown"
+
+        return mech
+
+    @property
     def eqpar(self):
         """For documentation see lwsspy.seismo.eqpar."""
         return list(eqpar(self.tensor))
@@ -713,6 +757,42 @@ class CMTSource(object):
 
     def __ne__(self, other):
         return self.__dict__ != other.__dict__
+
+    @property
+    def gamma(self):
+        return self.decomp("gamma")
+
+    @property
+    def lune_coordinates(self):
+        """Returns tuple of lune quantities of the source.
+        gamma, delta, M0, thetadc, lamdev, lamiso, kappa, theta, sigma, K, N, S
+
+        """
+        return get_lune_coordinates(self.tensor)
+
+    @property
+    def lune_gamma(self):
+        return self.lune_coordinates[0]
+
+    @property
+    def lune_delta(self):
+        return self.lune_coordinates[1]
+
+    @property
+    def lune_M0(self):
+        return self.lune_coordinates[2]
+
+    @property
+    def lune_kappa(self):
+        return self.lune_coordinates[6]
+
+    @property
+    def lune_theta(self):
+        return self.lune_coordinates[7]
+
+    @property
+    def lune_sigma(self):
+        return self.lune_coordinates[8]
 
     @staticmethod
     def same_eventids(id1, id2):
